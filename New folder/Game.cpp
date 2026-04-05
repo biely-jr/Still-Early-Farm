@@ -9,6 +9,9 @@ Game::Game()
 	//2 - create and draw the toolbar
 	createToolbar();
 	createBudgetbar();
+	updatestatusbar();
+	drawfieldboundary();
+
 	//3 - create and draw the backgroundPlayingArea
 
 
@@ -103,7 +106,7 @@ void Game::printBudget(string msg) const
 
 	pWind->SetPen(config.penColor, 50);
 	pWind->SetFont(24, BOLD, BY_NAME, "Arial");
-	pWind->DrawString(config.windWidth-200, config.toolBarHeight + 10, msg);
+	pWind->DrawString(config.windWidth-575, config.toolBarHeight + 10, msg);
 
 }
 
@@ -115,6 +118,20 @@ void Game::clearStatusBar() const
 	pWind->DrawRectangle(0, config.windHeight - config.statusBarHeight, config.windWidth, config.windHeight);
 }
 
+void Game::updatestatusbar() const
+{
+	clearStatusBar();
+	string status = "Level: " + to_string(level) + " | Timer: " + to_string(time) + " | Animals: " + to_string(animalcount);
+	pWind->SetPen(config.penColor);
+	pWind->SetFont(20, BOLD, BY_NAME, "Arial");
+	pWind->DrawString(10, config.windHeight - (int)(0.85 * config.statusBarHeight), status);
+
+}
+void Game::drawfieldboundary() const {
+	pWind->SetPen(config.penColor, config.penWidth);
+	// Draw from below the BudgetBar to above the StatusBar
+	pWind->DrawRectangle(0, 2 * config.toolBarHeight, config.windWidth, config.windHeight - config.statusBarHeight, FRAME);
+}
 void Game::printMessage(string msg) const
 {
 	clearStatusBar();	//First clear the status bar
@@ -129,25 +146,53 @@ window* Game::getWind() const
 {
 	return pWind;
 }
+void Game::gametimer(int level)
+{
+	int timer;
+	timer = 150 - (level - 1) * 10;
+	if (timer < 50)
+	{
+		timer = 50;
 
+	}
+}
 void Game::go() const
 {
 	//This function reads the position where the user clicks to determine the desired operation
 	int x, y;
 	bool isExit = false;
 
-	//Change the title
-	pWind->ChangeTitle("- - - - - - - - - - Farm Frenzy (CIE101-project) - - - - - - - - - -");
+
+	pWind->ChangeTitle("Farm Frenzy");
 
 	do
 	{
-		printMessage("Ready...");
-		string budget_string = "BUDGET = $" + to_string(budget);
-		printBudget(budget_string);
+	//setting the background (error that the animals dont appear)
+		//pWind->SetBrush(config.bkGrndColor);
+		//pWind->SetPen(config.bkGrndColor);
+		//pWind->DrawRectangle(0, 0, config.windWidth, config.windHeight);
+		////the ui and field
+
+
+		string budget_string = "BUDGET: $" + to_string(budget) ;
+		string prices = " | Chick: $100 | Cow: $200 | water: $50 ";
+		printBudget(budget_string + prices);
+		//update the buffer
+
+		gameToolbar->draw();
+		gameBudgetbar->draw();
+		drawfieldboundary();
+		updatestatusbar();
+		pWind->UpdateBuffer();
 		//printBudget("BUDGET = $1000");
-		getMouseClick(x, y);	//Get the coordinates of the user click
+
+		getMouseClick(x, y);	
+		//Get the coordinates of the user click
 		//if (gameMode == MODE_DSIGN)		//Game is in the Desgin mode
 		//{
+
+
+		pWind->UpdateBuffer();
 			//[1] If user clicks on the Toolbar
 		if (y >= 0 && y < config.toolBarHeight)
 		{
@@ -157,7 +202,9 @@ void Game::go() const
 		{
 			isExit = gameBudgetbar->handleClick(x, y);
 		}
-		//}
+		pWind->SetBuffering(true); // Prevent flickering
+
+	
 
 	} while (!isExit);
 }
