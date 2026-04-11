@@ -15,9 +15,12 @@ public:
 	int level = 1;
 	int time = 150;
 	int animalcount = 0;
-	void gametimer (int level); // The function to calculate time
+	void gametimer(int level); // The function to calculate time
 	Game();
 	~Game();
+
+	// FIX: Removed 'const' so this can update animal positions
+	void updatePlayArea();
 
 	clicktype getMouseClick(int& x, int& y) const; //Get coordinate where user clicks and returns click type (left/right)
 	string getSrting() const;	 //Returns a string entered by the user
@@ -31,10 +34,12 @@ public:
 	void clearStatusBar() const;	//Clears the status bar
 	void updatestatusbar() const; //refresh the status bar continously
 	void drawfieldboundary() const; //to set the field boundary
+	void Restart();
 	void printMessage(string msg) const;	//Print a message on Status bar
+	void spawnWolves();
 
-	void go() const;
+	// FIX: Removed 'const' because the game loop modifies game states
+	void go();
 
 	window* getWind() const;		//returns a pointer to the graphics window
 };
-
