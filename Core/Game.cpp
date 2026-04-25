@@ -230,7 +230,7 @@ void Game::drawWolf() const
 	// 2. Start the loop at index 1 instead of 0 to skip the first vector wolf
 	for (size_t i = 1; i < wolves.size(); i++)
 	{
-		pWind->DrawImage(::wolfImagePath, wolves[i].x, wolves[i].y, 140, 140);
+		pWind->DrawImage(::wolfImagePath, wolves[i].x, wolves[i].y, 100, 100);
 	}
 }
 
