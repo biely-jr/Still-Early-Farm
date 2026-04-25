@@ -15,15 +15,18 @@ void ToolbarIcon::draw() const
 }
 
 RestartIcon::RestartIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : ToolbarIcon(r_pGame, r_point, r_width, r_height, img_path)
-{}
+{
+}
 
 void RestartIcon::onClick()
 {
 	//TO DO: add code for restarting the game here
+	pGame->Restart();
 }
 
 ExitIcon::ExitIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : ToolbarIcon(r_pGame, r_point, r_width, r_height, img_path)
-{}
+{
+}
 
 void ExitIcon::onClick()
 {
@@ -72,7 +75,7 @@ bool Toolbar::handleClick(int x, int y)
 
 
 	//Check whick icon was clicked
-	//==> This assumes that menu icons are lined up horizontally <==
+	//his assumes that menu icons are lined up horizontally
 	//Divide x co-ord of the point clicked by the icon width (int division)
 	//if division result is 0 ==> first icon is clicked, if 1 ==> 2nd icon and so on
 
@@ -84,4 +87,3 @@ bool Toolbar::handleClick(int x, int y)
 	return false;
 
 }
-
