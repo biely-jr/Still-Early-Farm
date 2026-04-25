@@ -29,6 +29,7 @@ private:
 	Toolbar* gameToolbar;
 	Budgetbar* gameBudgetbar;
 	std::vector<Animal*> animals;
+	std::vector<point> wolves;
 	FoodArea foodAreas[2];
 
 	void initializeFoodAreas();
@@ -44,8 +45,14 @@ private:
 
 public:
 	int budget = 5000;
+	int level = 1;
+	int time = 150;
+	int animalcount = 0;
+	void gametimer(int level);
 	Game();
 	~Game();
+
+void updatePlayArea();
 
 	clicktype getMouseClick(int& x, int& y) const; //Get coordinate where user clicks and returns click type (left/right)
 	string getSrting() const;	 //Returns a string entered by the user
@@ -57,16 +64,19 @@ public:
 	void clearBudget() const;
 	void printBudget(string msg) const;
 	void clearStatusBar() const;	//Clears the status bar
-
-
+	void updatestatusbar() const; //refresh the status bar continously
+	void drawfieldboundary() const; //to set the field boundary
+	void Restart();
 	void printMessage(string msg) const;	//Print a message on Status bar
+	void spawnWolves();
 
-	void go() const;
+	void go() ;
+
 	void redrawField() const;
 	bool canAfford(int amount) const;
 	bool spendBudget(int amount);
 	void placeAnimal(AnimalType animalType);
 
+
 	window* getWind() const;		//returns a pointer to the graphics window
 };
-
