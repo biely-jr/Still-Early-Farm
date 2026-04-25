@@ -1,0 +1,9 @@
+﻿cl : command line  warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  Game.cpp
+  Generating Code...
+  Skipping... (no relevant changes detected)
+  main.cpp
+  Toolbar.cpp
+  BudgetBar.cpp
+  Animal.cpp
+  graphics_prj.vcxproj -> C:\Users\LENOVO\OneDrive\Desktop\spring 2026\CIE 101\Project\New folder\CIE101_ProjectStartupCode\CIE101_ProjectStartupCode\Debug\graphics_prj.exe
