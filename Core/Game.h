@@ -48,11 +48,16 @@ public:
 	int level = 1;
 	int time = 150;
 	int animalcount = 0;
+	string wolfImagePath;
+	mutable int wolfX;
+	mutable int wolfY;
+	void moveWolf() const;
+
 	void gametimer(int level);
 	Game();
 	~Game();
 
-void updatePlayArea();
+	void updatePlayArea();
 
 	clicktype getMouseClick(int& x, int& y) const; //Get coordinate where user clicks and returns click type (left/right)
 	string getSrting() const;	 //Returns a string entered by the user
@@ -70,7 +75,7 @@ void updatePlayArea();
 	void printMessage(string msg) const;	//Print a message on Status bar
 	void spawnWolves();
 
-	void go() ;
+	void go();
 
 	void redrawField() const;
 	bool canAfford(int amount) const;
