@@ -152,6 +152,17 @@ WaterIcon::WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, st
 	grassList = new point[50]; // Max 50 green areas
 }
 
+void WaterIcon::draw() const
+{
+	window* pWind = pGame->getWind();
+	pWind->SetPen(BLACK, 2);
+	pWind->SetBrush(SKYBLUE);
+	pWind->DrawRectangle(RefPoint.x, RefPoint.y, RefPoint.x + width, RefPoint.y + height, FILLED);
+	pWind->SetPen(BLACK, 2);
+	pWind->SetFont(18, BOLD, BY_NAME, "Arial");
+	pWind->DrawString(RefPoint.x + 18, RefPoint.y + 14, "WATER");
+}
+
 void WaterIcon::onClick()
 {
 	if (pGame->budget >= 50)   // Price set to 50
