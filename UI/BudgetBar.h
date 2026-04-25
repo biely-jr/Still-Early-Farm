@@ -66,6 +66,7 @@ public:
 
 	WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path);
 
+	virtual void draw() const override;
 	virtual void onClick() override;
 	virtual void moveAnimals() override;
 };
