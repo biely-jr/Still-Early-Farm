@@ -1,52 +1,106 @@
 #pragma once
 #include "../Core/Drawable.h"
+#include "../Entities/Animal.h"
 #include "../Config/GameConfig.h"
+#include <random>
+#include <limits>
 
+//Ranges for generating a random location for the animals
+// Setting up the randomization phase 
+const int range_min_x = 50;
+const int range_max_x = config.windWidth - 50;
+const int range_min_y = (config.toolBarHeight * 2) + 50;
+const int range_max_y = config.windHeight - config.statusBarHeight - 50;
+
+//Base class for all toolbar icons 
 class BudgetbarIcon : public Drawable
 {
+private:
+	//string image_path;
 public:
 	string image_path;
 	BudgetbarIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path);
 	virtual void draw() const override;
-	virtual void onClick() = 0;
+	virtual void onClick() = 0;   //The action that should be taken when this icon is clicked
 
-	virtual void moveAnimals() {} 
+	virtual void moveAnimals() {}
+
+	virtual void catchAnimals(int wolfX, int wolfY, int wolfW, int wolfH) {}
+
 };
 
 class ChickIcon : public BudgetbarIcon
 {
 public:
+	Chick** chickList; //an array of Chick pointers
+	int count = 0;
 	ChickIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path);
 	virtual void onClick() override;
-	virtual void moveAnimals() override; 
+
+	virtual void moveAnimals() override;
+
+	virtual void catchAnimals(int wolfX, int wolfY, int wolfW, int wolfH) override;
 };
 
 class CowIcon : public BudgetbarIcon
 {
 public:
+	Cow** cowList;   // array of cows
+	int count = 0;
+
 	CowIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path);
+
+	virtual void onClick() override;
+
+	virtual void moveAnimals() override;
+
+	virtual void catchAnimals(int wolfX, int wolfY, int wolfW, int wolfH) override;
+
+};
+
+class WaterIcon : public BudgetbarIcon
+{
+public:
+	point* grassList;   // Array to keep track of the green areas
+	int count = 0;
+
+	WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path);
+
 	virtual void onClick() override;
 	virtual void moveAnimals() override;
 };
 
-enum ANIMAL_ICONS
+// TO DO: The rest of icons in the toolbar
+
+enum ANIMAL_ICONS //The icons of the toolbar (you should add more icons)
 {
+	//Note: Icons are ordered here as they appear in menu
+	//If you want to change the menu icons order, change the order here
+	ICON_WATER,
 	ICON_CHICK,
 	ICON_COW,
 	ANIMAL_COUNT
+	//TODO: Add more icons names here
+
+//Cow icon
+//no. of menu icons ==> This should be the last line in this enum
 };
 
 class Budgetbar : public Drawable
 {
 private:
-	BudgetbarIcon** iconsList;
+	BudgetbarIcon** iconsList; //an array of toolbarIcon pointers
 	string iconsImages[ANIMAL_COUNT];
 
 public:
 	Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height);
 	~Budgetbar();
 	void draw() const override;
-	bool handleClick(int x, int y);
+	bool handleClick(int x, int y);	//handles clicks on toolbar icons, returns true if exit is clicked
 
+	void moveAllAnimals();
 	void moveAnimals();
+
+	void catchAllAnimals(int wolfX, int wolfY, int wolfW, int wolfH);
+
 };
