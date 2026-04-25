@@ -19,9 +19,28 @@ namespace
 
 Game::Game()
 {
+	//1 - Create the main window
 	pWind = CreateWind(config.windWidth, config.windHeight, config.wx, config.wy);
+
+	//2 - create and draw the toolbar
 	createToolbar();
 	createBudgetbar();
+
+	//3 - create and draw the backgroundPlayingArea
+
+	//4- Create the Plane
+	//TODO: Add code to create and draw the Plane
+
+	//5- Create the Bullet
+	//TODO: Add code to create and draw the Bullet
+
+	//6- Create the enemies
+	//TODO: Add code to create and draw enemies in random places
+	wolfImagePath = "images\\Wolf.jpg"; // Adjust extension if it's .png
+	wolfX = 835;
+	wolfY = 205;
+
+	//7- Create and clear the status bar
 	gametimer(level);
 	updatestatusbar();
 	drawfieldboundary();
@@ -46,6 +65,8 @@ Game::~Game()
 
 clicktype Game::getMouseClick(int& x, int& y) const
 {
+	// GetMouseClick is non-blocking. It checks if the mouse was clicked right now.
+	// If yes, it updates x and y. If not, it returns NO_CLICK and lets the code continue.
 	return pWind->GetMouseClick(x, y);
 }
 
@@ -76,6 +97,9 @@ string Game::getSrting() const
 window* Game::CreateWind(int w, int h, int x, int y) const
 {
 	window* pW = new window(w, h, x, y);
+
+	pW->SetBuffering(true);
+
 	pW->SetBrush(config.bkGrndColor);
 	pW->SetPen(config.bkGrndColor, 1);
 	pW->DrawRectangle(0, 0, w, h);
@@ -130,6 +154,7 @@ void Game::clearStatusBar() const
 	//Clear Status bar by drawing a filled rectangle
 	pWind->SetPen(config.statusBarColor, 1);
 	pWind->SetBrush(config.statusBarColor);
+	//DrawRectangle(X1,Y1,X2,Y2)
 	pWind->DrawRectangle(0, config.windHeight - config.statusBarHeight, config.windWidth, config.windHeight);
 }
 
@@ -199,8 +224,30 @@ void Game::spawnWolves()
 
 void Game::drawWolf() const
 {
-	for (const point& wolfPosition : wolves)
-		pWind->DrawImage(wolfImagePath, wolfPosition.x, wolfPosition.y, 140, 140);
+	// 1. Draw primary moving wolf
+	pWind->DrawImage(Game::wolfImagePath, wolfX, wolfY, 140, 140);
+
+	// 2. Start the loop at index 1 instead of 0 to skip the first vector wolf
+	for (size_t i = 1; i < wolves.size(); i++)
+	{
+		pWind->DrawImage(::wolfImagePath, wolves[i].x, wolves[i].y, 140, 140);
+	}
+}
+
+void Game::moveWolf() const
+{
+	// Generates a random number between -15 and +15 to shift X and Y
+	wolfX += (rand() % 31 - 15);
+	wolfY += (rand() % 31 - 15);
+
+	// BOUNDARY CHECKING: Prevent the wolf from walking off the screen or over the UI
+	// Right and Left bounds
+	if (wolfX < 0) wolfX = 0;
+	if (wolfX > config.windWidth - 140) wolfX = config.windWidth - 140;
+
+	// Top and Bottom bounds (Respecting Toolbars and Status Bar)
+	if (wolfY < config.toolBarHeight * 2) wolfY = config.toolBarHeight * 2;
+	if (wolfY > config.windHeight - config.statusBarHeight - 140) wolfY = config.windHeight - config.statusBarHeight - 140;
 }
 
 void Game::drawFoodArea(const FoodArea& area) const
@@ -267,22 +314,34 @@ void Game::consumeFoodArea(int areaIndex)
 void Game::Restart()
 {
 	cout << "Restart button clicked" << endl;
+	// 1. Reset budget
 	budget = 5000;
+	animalcount = 0;
+	level = 1;               // Resets the level back to 1
+	gametimer(level);		 // Resets the timer based on the level
 	animalcount = 0;
 
 	for (Animal* animal : animals)
 		delete animal;
 	animals.clear();
 
+	// 2. Clear the entire window, basically erases the set window and makes a new one
+	// How it works : it is used in drawing a giant rectangle that covers the intial gameplay
 	pWind->SetPen(config.bkGrndColor, 1);
 	pWind->SetBrush(config.bkGrndColor);
 	pWind->DrawRectangle(0, 0, config.windWidth, config.windHeight);
 
+	// 3. Delete old UI elements, deletes their pointers to prevent memory leaks
 	delete gameToolbar;
 	delete gameBudgetbar;
 
+	// 4. Recreate UI (toolbar + budget bar)
 	createToolbar();
 	createBudgetbar();
+
+	// 5. Clear status bar
+	clearStatusBar();
+
 	initializeFoodAreas();
 	spawnWolves();
 	redrawField();
@@ -293,7 +352,7 @@ void Game::Restart()
 
 void Game::printMessage(string msg) const
 {
-	clearStatusBar();
+	clearStatusBar();	//First clear the status bar
 	pWind->SetPen(config.penColor, 50);
 	pWind->SetFont(24, BOLD, BY_NAME, "Arial");
 	pWind->DrawString(10, config.windHeight - (int)(0.85 * config.statusBarHeight), msg);
@@ -312,6 +371,7 @@ void Game::gametimer(int level)
 		time = 60;
 	}
 }
+
 void Game::redrawField() const
 {
 	clearPlayingArea();
@@ -389,19 +449,39 @@ void Game::placeAnimal(AnimalType animalType)
 
 void Game::go()
 {
+	//This function reads the position where the user clicks to determine the desired operation
 	int x = -1, y = -1;
 	bool isExit = false;
+
+	//Change the title
+	pWind->ChangeTitle("- - - - - - - - - - Farm Frenzy (CIE101-project) - - - - - - - - - -");
 	pWind->SetBuffering(true);
 	pWind->UpdateBuffer();
 	pWind->ChangeTitle("Farm Frenzy");
 
+	//Set up the clock tracker before the loop starts
+	auto lastTime = std::chrono::steady_clock::now();
+
 	do
 	{
+		auto currentTime = std::chrono::steady_clock::now();
+
+		// Check if 1 second has passed
+		if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count() >= 1)
+		{
+			if (time > 0) {
+				time--; // Decrease timer
+			}
+			lastTime = currentTime; // Reset the clock tracker
+		}
+
 		pWind->SetBuffering(true); // Prevent flickering
 
 		printMessage("Press any button to start");
+		string budget_string_code = "BUDGET = $" + to_string(budget);
 		string budget_string = "BUDGET: $" + to_string(budget);
 		string prices = " | Chick: $100 | Cow: $200 | water: $50 ";
+		//printBudget("BUDGET = $1000");
 		printBudget(budget_string + prices);
 
 		gameToolbar->draw();
@@ -409,7 +489,7 @@ void Game::go()
 		drawfieldboundary();
 		updatestatusbar();
 
-		clicktype click = getMouseClick(x, y);
+		clicktype click = getMouseClick(x, y);	//Get the coordinates of the user click
 
 		updatePlayArea();
 
@@ -417,6 +497,9 @@ void Game::go()
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+		//if (gameMode == MODE_DSIGN)		//Game is in the Desgin mode
+		//{
+			//[1] If user clicks on the Toolbar
 		if (click == LEFT_CLICK && y >= 0 && y < config.toolBarHeight)
 		{
 			isExit = gameToolbar->handleClick(x, y);
@@ -425,15 +508,78 @@ void Game::go()
 		{
 			isExit = gameBudgetbar->handleClick(x, y);
 		}
+		//}
 
 	} while (!isExit);
 }
 
-// FIX: Removed 'const' 
+// Constantly erases the old frame and draws the new one.
 void Game::updatePlayArea()
 {
+	// 1. Check collisions with the vector of animals
+	for (auto it = animals.begin(); it != animals.end(); )
+	{
+		Animal* animal = *it;
+		point p = animal->getRefPoint();
+		int w = animal->getWidth();
+		int h = animal->getHeight();
+
+		bool isEaten = false;
+
+		// A. Check collision with the primary moving wolf
+		if (p.x < wolfX + 140 && p.x + w > wolfX &&
+			p.y < wolfY + 140 && p.y + h > wolfY)
+		{
+			isEaten = true;
+		}
+
+		// B. Check collision with any multiplied/cloned wolves
+		if (!isEaten) {
+			for (size_t i = 1; i < wolves.size(); i++) {
+				if (p.x < wolves[i].x + 140 && p.x + w > wolves[i].x &&
+					p.y < wolves[i].y + 140 && p.y + h > wolves[i].y)
+				{
+					isEaten = true;
+					break; // Stop checking other wolves if already eaten
+				}
+			}
+		}
+
+		// C. If the animal was eaten, remove it from the game
+		if (isEaten)
+		{
+			delete animal;              // Free the memory
+			it = animals.erase(it);     // Remove safely from the vector
+
+			if (animalcount > 0) {
+				animalcount--;          // Decrease the counter
+				updatestatusbar();      // Refresh the UI to show the new count
+			}
+		}
+		else
+		{
+			++it; // Move to the next animal only if this one wasn't eaten
+		}
+	}
+
+	// 2. Move wolves and animals
+	moveWolf();
 	for (Animal* animal : animals)
 		animal->moveStep();
 
-	redrawField();
+	// 3. Clear the playing area and draw static background elements
+	clearPlayingArea();
+	drawFieldBackground();
+	drawfieldboundary();
+	drawAllFoodAreas();
+	drawEggsAndMilk();
+	drawWarehouse();
+
+	// 4. Draw the grass (and any old array animals) so it sits on the ground
+	gameBudgetbar->moveAllAnimals();
+
+	// 5. Draw the moving wolf and new vector animals ON TOP of the grass
+	drawWolf();
+	for (Animal* animal : animals)
+		animal->draw();
 }
