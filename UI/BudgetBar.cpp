@@ -60,7 +60,7 @@ Budgetbar::Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height) : 
 {
 	//First prepare List of images for each icon
 	//To control the order of these images in the menu, reoder them in enum ICONS above	
-	iconsImages[ICON_WATER] = "images\\water.jpg";
+	iconsImages[ICON_WATER] = "images\\clean-water.jpg";
 	iconsImages[ICON_CHICK] = "images\\chick.jpg";
 	iconsImages[ICON_COW] = "images\\cow.jpg";
 
@@ -87,7 +87,7 @@ Budgetbar::Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height) : 
 
 Budgetbar::~Budgetbar()
 {
-	for (int i = 0; i < ICON_COUNT; i++)
+	for (int i = 0; i < ANIMAL_COUNT; i++)
 		delete iconsList[i];
 	delete[] iconsList; // Adjusted to array delete from text version style
 }
@@ -155,13 +155,17 @@ WaterIcon::WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, st
 void WaterIcon::draw() const
 {
 	window* pWind = pGame->getWind();
-
-	// Draw the image using the image_path inherited from BudgetbarIcon
 	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
 }
 
 void WaterIcon::onClick()
 {
+	if (pGame->isPaused())
+	{
+		pGame->printMessage("Resume the game before watering.");
+		return;
+	}
+
 	if (pGame->budget >= 50)   // Price set to 50
 	{
 		pGame->budget -= 50;
