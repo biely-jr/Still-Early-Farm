@@ -18,6 +18,9 @@ namespace
 }
 
 Game::Game()
+	: paused(false),
+	eggCount(0),
+	milkCount(0)
 {
 	//1 - Create the main window
 	pWind = CreateWind(config.windWidth, config.windHeight, config.wx, config.wy);
@@ -276,6 +279,14 @@ void Game::drawEggsAndMilk() const
 {
 	pWind->DrawImage(eggImagePath, 610, 160, 90, 90);
 	pWind->DrawImage(milkImagePath, 720, 160, 80, 90);
+
+	pWind->SetPen(BLACK, 2);
+	pWind->SetBrush(WHITE);
+	pWind->DrawRectangle(610, 130, 700, 156, FILLED, 10, 10);
+	pWind->DrawRectangle(720, 130, 810, 156, FILLED, 10, 10);
+	pWind->SetFont(16, BOLD, BY_NAME, "Arial");
+	pWind->DrawString(620, 134, "Eggs: " + to_string(eggCount));
+	pWind->DrawString(730, 134, "Milk: " + to_string(milkCount));
 }
 
 void Game::drawWarehouse() const
@@ -320,6 +331,9 @@ void Game::Restart()
 	level = 1;               // Resets the level back to 1
 	gametimer(level);		 // Resets the timer based on the level
 	animalcount = 0;
+	eggCount = 0;
+	milkCount = 0;
+	paused = false;
 
 	for (Animal* animal : animals)
 		delete animal;
@@ -402,6 +416,12 @@ bool Game::spendBudget(int amount)
 
 void Game::placeAnimal(AnimalType animalType)
 {
+	if (paused)
+	{
+		printMessage("Resume the game before adding more animals.");
+		return;
+	}
+
 	int animalCost = chickCost;
 	int animalWidth = 50;
 	int animalHeight = 50;
@@ -446,6 +466,37 @@ void Game::placeAnimal(AnimalType animalType)
 	printMessage(animalName + " added. Cost = $" + to_string(animalCost));
 }
 
+void Game::pauseGame()
+{
+	paused = true;
+	printMessage("Game paused.");
+}
+
+void Game::resumeGame()
+{
+	paused = false;
+	printMessage("Game resumed.");
+}
+
+bool Game::isPaused() const
+{
+	return paused;
+}
+
+void Game::registerAnimalProduct(const string& productLabel)
+{
+	if (productLabel == "Egg")
+		eggCount++;
+	else if (productLabel == "Milk")
+		milkCount++;
+}
+
+void Game::updateAnimalProduction(int elapsedSeconds)
+{
+	for (Animal* animal : animals)
+		animal->advanceProduction(elapsedSeconds);
+}
+
 
 void Game::go()
 {
@@ -461,23 +512,41 @@ void Game::go()
 
 	//Set up the clock tracker before the loop starts
 	auto lastTime = std::chrono::steady_clock::now();
+	auto lastProductionTick = lastTime;
 
 	do
 	{
 		auto currentTime = std::chrono::steady_clock::now();
 
 		// Check if 1 second has passed
-		if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count() >= 1)
+		if (!paused && std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count() >= 1)
 		{
 			if (time > 0) {
 				time--; // Decrease timer
 			}
 			lastTime = currentTime; // Reset the clock tracker
 		}
+		else if (paused)
+		{
+			lastTime = currentTime;
+		}
+
+		if (!paused)
+		{
+			int elapsedProductionSeconds = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastProductionTick).count());
+			if (elapsedProductionSeconds >= 1)
+			{
+				updateAnimalProduction(elapsedProductionSeconds);
+				lastProductionTick = currentTime;
+			}
+		}
+		else
+		{
+			lastProductionTick = currentTime;
+		}
 
 		pWind->SetBuffering(true); // Prevent flickering
 
-		printMessage("Press any button to start");
 		string budget_string_code = "BUDGET = $" + to_string(budget);
 		string budget_string = "BUDGET: $" + to_string(budget);
 		string prices = " | Chick: $100 | Cow: $200 | water: $50 ";
@@ -491,7 +560,12 @@ void Game::go()
 
 		clicktype click = getMouseClick(x, y);	//Get the coordinates of the user click
 
-		updatePlayArea();
+		if (!paused)
+			updatePlayArea();
+		else if (paused)
+			printMessage("Game paused");
+		else
+			redrawField();
 
 		pWind->UpdateBuffer(); // Update the buffer after all drawing is finished
 
