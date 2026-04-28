@@ -2,10 +2,15 @@
 #include "../Config/GameConfig.h"
 #include "../Core/Game.h"
 #include <iostream>
+#include <utility>
 #include <cstdlib>
 using namespace std;
 
-Animal::Animal(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : Drawable(r_pGame, r_point, r_width, r_height)
+Animal::Animal(Game* r_pGame, point r_point, int r_width, int r_height, string img_path, int productIntervalSeconds, const string& productName)
+	: Drawable(r_pGame, r_point, r_width, r_height),
+	productionElapsedSeconds(0),
+	productionIntervalSeconds(productIntervalSeconds),
+	productLabel(productName)
 {
 	image_path = img_path;
 	curr_pos = r_point;
@@ -19,9 +24,44 @@ void Animal::draw() const
 	//draw image of this object
 	window* pWind = pGame->getWind();
 	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
+
+	pWind->SetPen(BLACK, 2);
+	pWind->SetBrush(WHITE);
+	pWind->DrawRectangle(RefPoint.x - 6, RefPoint.y - 28, RefPoint.x + 56, RefPoint.y - 4, FILLED, 10, 10);
+	pWind->SetFont(14, BOLD, BY_NAME, "Arial");
+	pWind->DrawString(RefPoint.x + 4, RefPoint.y - 24, to_string(productionElapsedSeconds) + "/" + to_string(productionIntervalSeconds));
 }
 
-Chick::Chick(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : Animal(r_pGame, r_point, r_width, r_height, img_path)
+void Animal::advanceProduction(int elapsedSeconds)
+{
+	if (elapsedSeconds <= 0)
+		return;
+
+	productionElapsedSeconds += elapsedSeconds;
+
+	while (productionElapsedSeconds >= productionIntervalSeconds)
+	{
+		productionElapsedSeconds -= productionIntervalSeconds;
+		pGame->registerAnimalProduct(productLabel);
+	}
+}
+
+int Animal::getProductionCounter() const
+{
+	return productionElapsedSeconds;
+}
+
+int Animal::getProductionInterval() const
+{
+	return productionIntervalSeconds;
+}
+
+string Animal::getProductLabel() const
+{
+	return productLabel;
+}
+
+Chick::Chick(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : Animal(r_pGame, r_point, r_width, r_height, img_path, 10, "Egg")
 {
 }
 
@@ -51,7 +91,7 @@ void Chick::moveStep()
 	if (RefPoint.y > max_y) { RefPoint.y = max_y; curr_vel.y = -1; }
 }
 
-Cow::Cow(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : Animal(r_pGame, r_point, r_width, r_height, img_path)
+Cow::Cow(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : Animal(r_pGame, r_point, r_width, r_height, img_path, 15, "Milk")
 {
 }
 
