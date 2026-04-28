@@ -155,12 +155,9 @@ WaterIcon::WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, st
 void WaterIcon::draw() const
 {
 	window* pWind = pGame->getWind();
-	pWind->SetPen(BLACK, 2);
-	pWind->SetBrush(SKYBLUE);
-	pWind->DrawRectangle(RefPoint.x, RefPoint.y, RefPoint.x + width, RefPoint.y + height, FILLED);
-	pWind->SetPen(BLACK, 2);
-	pWind->SetFont(18, BOLD, BY_NAME, "Arial");
-	pWind->DrawString(RefPoint.x + 18, RefPoint.y + 14, "WATER");
+
+	// Draw the image using the image_path inherited from BudgetbarIcon
+	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
 }
 
 void WaterIcon::onClick()
