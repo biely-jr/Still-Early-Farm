@@ -20,7 +20,9 @@ namespace
 Game::Game()
 	: paused(false),
 	eggCount(0),
-	milkCount(0)
+	milkCount(0),
+	warehouseEggCount(0),
+	warehouseMilkCount(0)
 {
 	//1 - Create the main window
 	pWind = CreateWind(config.windWidth, config.windHeight, config.wx, config.wy);
@@ -292,6 +294,16 @@ void Game::drawEggsAndMilk() const
 void Game::drawWarehouse() const
 {
 	pWind->DrawImage(warehouseImagePath, 900, 315, 220, 180);
+
+	int textX = 50;
+	int textY = config.windHeight - 80;
+
+	pWind->SetPen(BLACK, 2);
+	pWind->SetFont(18, BOLD, BY_NAME, "Arial");
+
+	// Draw the text showing amounts
+	string warehouseStatus = "Warehouse - Eggs: " + to_string(warehouseEggCount) + " | Milk: " + to_string(warehouseMilkCount);
+	pWind->DrawString(textX, textY, warehouseStatus);
 }
 
 point Game::getRandomAnimalPosition(int animalWidth, int animalHeight) const
@@ -523,6 +535,23 @@ void Game::updateAnimalProduction(int elapsedSeconds)
 		animal->advanceProduction(elapsedSeconds);
 }
 
+void Game::collectEggs()
+{
+	if (eggCount > 0) {
+		warehouseEggCount += eggCount;
+		eggCount = 0; // Remove from the icon bar
+		updatestatusbar(); // Refresh UI if necessary
+	}
+}
+
+void Game::collectMilk()
+{
+	if (milkCount > 0) {
+		warehouseMilkCount += milkCount;
+		milkCount = 0; // Remove from the icon bar
+		updatestatusbar(); // Refresh UI if necessary
+	}
+}
 
 void Game::go()
 {
@@ -607,6 +636,19 @@ void Game::go()
 		else if (click == LEFT_CLICK && y >= config.toolBarHeight && y < 2 * config.toolBarHeight)
 		{
 			isExit = gameBudgetbar->handleClick(x, y);
+		}
+		else if (click == LEFT_CLICK && y >= 2 * config.toolBarHeight)
+		{
+			// Check Egg Icon bounds (from drawEggsAndMilk: X: 610-700, Y: 130-250)
+			if (x >= 610 && x <= 700 && y >= 130 && y <= 250)
+			{
+				collectEggs();
+			}
+			// Check Milk Icon bounds (from drawEggsAndMilk: X: 720-810, Y: 130-250)
+			else if (x >= 720 && x <= 810 && y >= 130 && y <= 250)
+			{
+				collectMilk();
+			}
 		}
 		//}
 
