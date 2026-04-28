@@ -35,6 +35,9 @@ private:
 	int eggCount;
 	int milkCount;
 
+	int warehouseEggCount;
+	int warehouseMilkCount;
+
 	void initializeFoodAreas();
 	void clearPlayingArea() const;
 	void drawFieldBackground() const;
@@ -55,6 +58,9 @@ public:
 	mutable int wolfX;
 	mutable int wolfY;
 	void moveWolf() const;
+
+	void collectEggs();
+	void collectMilk();
 
 	void gametimer(int level);
 	Game();
