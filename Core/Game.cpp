@@ -396,8 +396,34 @@ void Game::redrawField() const
 	drawWolf();
 	drawWarehouse();
 
+	int chickCounter = 1;
+	int cowCounter = 1;
+
 	for (Animal* animal : animals)
+	{
 		animal->draw();
+
+		pWind->SetPen(BLACK, 2);
+		pWind->SetFont(16, BOLD, BY_NAME, "Arial");
+		point p = animal->getRefPoint();
+
+		int xShift = 15;
+		int displayCounter = 1;
+
+		// If width >= 70, it's a Cow. Otherwise, it's a Chick.
+		if (animal->getWidth() >= 70)
+		{
+			xShift = 30;
+			displayCounter = cowCounter++; // Use and increment cow counter
+		}
+		else
+		{
+			xShift = 15;
+			displayCounter = chickCounter++; // Use and increment chick counter
+		}
+
+		pWind->DrawString(p.x + animal->getWidth() - xShift, p.y - 25, to_string(displayCounter));
+	}
 }
 
 bool Game::canAfford(int amount) const
@@ -654,6 +680,33 @@ void Game::updatePlayArea()
 
 	// 5. Draw the moving wolf and new vector animals ON TOP of the grass
 	drawWolf();
+
+	int chickCounter = 1;
+	int cowCounter = 1;
+
 	for (Animal* animal : animals)
+	{
 		animal->draw();
+
+		pWind->SetPen(BLACK, 2);
+		pWind->SetFont(16, BOLD, BY_NAME, "Arial");
+		point p = animal->getRefPoint();
+
+		int xShift = 15;
+		int displayCounter = 1;
+
+		// If width >= 70, it's a Cow. Otherwise, it's a Chick.
+		if (animal->getWidth() >= 70)
+		{
+			xShift = 30;
+			displayCounter = cowCounter++; // Use and increment cow counter
+		}
+		else
+		{
+			xShift = 15;
+			displayCounter = chickCounter++; // Use and increment chick counter
+		}
+
+		pWind->DrawString(p.x + animal->getWidth() - xShift, p.y - 25, to_string(displayCounter));
+	}
 }
