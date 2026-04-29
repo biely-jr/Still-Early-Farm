@@ -389,6 +389,27 @@ window* Game::getWind() const
 	return pWind;
 }
 
+void Game::decreaseTimer()
+{
+	auto currentTime = std::chrono::steady_clock::now();
+
+	// Check if 1 second or more has passed
+	if (!paused && std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count() >= 1)
+	{
+		if (time > 0) {
+			time--; // Decrease timer
+		}
+		lastTime = currentTime; // Reset the clock tracker
+	}
+	else if (paused)
+	{
+		lastTime = currentTime;
+	}
+}
+
+//Not implemented yet
+// Lev 1 = 150 sec
+// Lev 2 = 140 sec and so on...
 void Game::gametimer(int level)
 {
 	time = 150 - (level - 1) * 10;
@@ -398,31 +419,38 @@ void Game::gametimer(int level)
 	}
 }
 
+//The screen is wiped clean and redrawn many times 
+// a second to create the illusion of animation
 void Game::redrawField() const
 {
-	clearPlayingArea();
+	clearPlayingArea(); //Wipes the main game window blank so that old frames don't leave a smeared trail on the screen.
 	drawFieldBackground();
 	drawfieldboundary();
 	drawAllFoodAreas();
 	drawEggsAndMilk();
 	drawWolf();
 	drawWarehouse();
+	//All draw functions sequentially draw the static background
 
 	int chickCounter = 1;
 	int cowCounter = 1;
+	//Each animal Individually has their own counter
 
 	for (Animal* animal : animals)
 	{
 		animal->draw();
 
+		//Responsible for writing text resembling the counter of the animal
 		pWind->SetPen(BLACK, 2);
 		pWind->SetFont(16, BOLD, BY_NAME, "Arial");
-		point p = animal->getRefPoint();
+		point p = animal->getRefPoint(); 
+		//It grabs the current (X, Y) coordinate of the animal being processed
+		//to know where to draw the number label respective to it
 
 		int xShift = 15;
 		int displayCounter = 1;
 
-		// If width >= 70, it's a Cow. Otherwise, it's a Chick.
+		// If width >= 70, it's a Cow
 		if (animal->getWidth() >= 70)
 		{
 			xShift = 30;
@@ -566,25 +594,14 @@ void Game::go()
 	pWind->ChangeTitle("Farm Frenzy");
 
 	//Set up the clock tracker before the loop starts
-	auto lastTime = std::chrono::steady_clock::now();
+	lastTime = std::chrono::steady_clock::now();
 	auto lastProductionTick = lastTime;
 
 	do
 	{
-		auto currentTime = std::chrono::steady_clock::now();
+		decreaseTimer();
 
-		// Check if 1 second has passed
-		if (!paused && std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count() >= 1)
-		{
-			if (time > 0) {
-				time--; // Decrease timer
-			}
-			lastTime = currentTime; // Reset the clock tracker
-		}
-		else if (paused)
-		{
-			lastTime = currentTime;
-		}
+		auto currentTime = std::chrono::steady_clock::now(); // Now used for production tracking
 
 		if (!paused)
 		{
