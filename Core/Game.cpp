@@ -630,7 +630,7 @@ void Game::go()
 		drawfieldboundary();
 		updatestatusbar();
 
-		clicktype click = getMouseClick(x, y);	//Get the coordinates of the user click
+		clicktype click = getMouseClick(x, y);	//Get the coordinates of the end-user click
 
 		if (!paused)
 			updatePlayArea();
@@ -643,16 +643,13 @@ void Game::go()
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-		//if (gameMode == MODE_DSIGN)		//Game is in the Desgin mode
-		//{
-			//[1] If user clicks on the Toolbar
 		if (click == LEFT_CLICK && y >= 0 && y < config.toolBarHeight)
 		{
-			isExit = gameToolbar->handleClick(x, y);
+			isExit = gameToolbar->handleClick(x, y); //clicked on the Toolbar section
 		}
 		else if (click == LEFT_CLICK && y >= config.toolBarHeight && y < 2 * config.toolBarHeight)
 		{
-			isExit = gameBudgetbar->handleClick(x, y);
+			isExit = gameBudgetbar->handleClick(x, y); //clicked on the budgetbar section
 		}
 		else if (click == LEFT_CLICK && y >= 2 * config.toolBarHeight)
 		{
@@ -667,7 +664,6 @@ void Game::go()
 				collectMilk();
 			}
 		}
-		//}
 
 	} while (!isExit);
 }
@@ -736,6 +732,7 @@ void Game::updatePlayArea()
 
 	// 4. Draw the grass (and any old array animals) so it sits on the ground
 	gameBudgetbar->moveAllAnimals();
+	// Consequentally it repeatedly calls void Budgetbar::moveAllAnimals() in BudgetBar.cpp due to iteration
 
 	// 5. Draw the moving wolf and new vector animals ON TOP of the grass
 	drawWolf();
