@@ -22,13 +22,15 @@ Animal::Animal(Game* r_pGame, point r_point, int r_width, int r_height, string i
 void Animal::draw() const
 {
 	//draw image of this object
+	//Both the chick and cow inherit the properties from this function in order to be drawn on the screen
 	window* pWind = pGame->getWind();
-	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
+	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height); // Passing the animal's unique properties as parameters
 
 	pWind->SetPen(BLACK, 2);
 	pWind->SetBrush(WHITE);
 	pWind->DrawRectangle(RefPoint.x - 6, RefPoint.y - 28, RefPoint.x + 56, RefPoint.y - 4, FILLED, 10, 10);
 	pWind->SetFont(14, BOLD, BY_NAME, "Arial");
+	//Draws a small white rectangle above it and prints its production time
 	pWind->DrawString(RefPoint.x + 4, RefPoint.y - 24, to_string(productionElapsedSeconds) + "/" + to_string(productionIntervalSeconds));
 }
 
