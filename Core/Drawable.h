@@ -18,7 +18,7 @@ protected:
 
 public:
 	Drawable(Game* r_pGame, point r_point, int r_width, int r_height);
-	virtual void draw() const = 0;
+	virtual void draw() const = 0;  // Draw function prototype/declaration
 
 	// Getters to allow collision detection to read the position and size of objects
 	point getRefPoint() const { return RefPoint; }
