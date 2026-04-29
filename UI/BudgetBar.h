@@ -75,7 +75,6 @@ public:
 
 enum ANIMAL_ICONS //The icons of the toolbar (you should add more icons)
 {
-	//Note: Icons are ordered here as they appear in menu
 	//If you want to change the menu icons order, change the order here
 	ICON_WATER,
 	ICON_CHICK,
@@ -97,7 +96,7 @@ public:
 	Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height);
 	~Budgetbar();
 	void draw() const override;
-	bool handleClick(int x, int y);	//handles clicks on toolbar icons, returns true if exit is clicked
+	bool handleClick(int x, int y);	//handles clicks on budgetbar icons, also is the function prototype
 
 	void moveAllAnimals();
 	void moveAnimals();
