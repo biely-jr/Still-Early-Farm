@@ -58,8 +58,7 @@ void CowIcon::onClick()
 
 Budgetbar::Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height) : Drawable(r_pGame, r_point, r_width, r_height)
 {
-	//First prepare List of images for each icon
-	//To control the order of these images in the menu, reoder them in enum ICONS above	
+	//To control the order of these images in the menu, they must be ordered as follows	to ensure the animals pass OVER the grass patch
 	iconsImages[ICON_WATER] = "images\\clean-water.jpg";
 	iconsImages[ICON_CHICK] = "images\\chick.jpg";
 	iconsImages[ICON_COW] = "images\\cow.jpg";
@@ -105,19 +104,16 @@ void Budgetbar::draw() const
 // Detect where the user clicked
 bool Budgetbar::handleClick(int x, int y)
 {
-	if (x > ANIMAL_COUNT * config.iconWidth)	//click outside toolbar boundaries
+	if (x > ANIMAL_COUNT * config.iconWidth) //click outside toolbar boundaries
 		return false;
 
 
-	//Check whick icon was clicked
-	//==> This assumes that menu icons are lined up horizontally <==
-	//Divide x co-ord of the point clicked by the icon width (int division)
-	//if division result is 0 ==> first icon is clicked, if 1 ==> 2nd icon and so on
+	//Check which icon was clicked
+	//Divide x co-ord of the point clicked by the icon width
+	//if division result is 0, first icon is clicked, if 1, 2nd icon and so on
 
 	int clickedIconIndex = (x / config.iconWidth);
-	iconsList[clickedIconIndex]->onClick();	//execute onClick action of clicled icon
-
-	//if (clickedIconIndex == ICON_EXIT) return true;
+	iconsList[clickedIconIndex]->onClick();	//execute onClick action of clicked icon
 
 	return false;
 
@@ -158,6 +154,7 @@ void WaterIcon::draw() const
 	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
 }
 
+// The randomized coordinates (X,Y) are calculated and stored through this function implementation
 void WaterIcon::onClick()
 {
 	if (pGame->isPaused())
@@ -179,7 +176,7 @@ void WaterIcon::onClick()
 		std::mt19937 gen(rd());
 
 		std::uniform_int_distribution<int> dist1(range_min_x, range_max_x);
-		p.x = dist1(gen);
+		p.x = dist1(gen); // Gets a random X and Y coordinate
 
 		std::uniform_int_distribution<int> dist2(range_min_y, range_max_y);
 		p.y = dist2(gen);
@@ -194,8 +191,7 @@ void WaterIcon::onClick()
 
 void WaterIcon::moveAnimals()
 {
-	// Because ICON_WATER is first in the enum, this draws the grass BEFORE the animals.
-	// This ensures the grass sits safely in the background and stops the flickering.
+	// Responsible for showing the grass patch on the main window
 	window* pWind = pGame->getWind();
 	for (int i = 0; i < count; i++) {
 		pWind->SetPen(GREEN, 1);
@@ -214,11 +210,6 @@ void Budgetbar::moveAllAnimals()
 			iconsList[i]->moveAnimals();
 		}
 	}
-}
-
-void Budgetbar::moveAnimals()
-{
-	// Included from the text version
 }
 
 void Budgetbar::catchAllAnimals(int wolfX, int wolfY, int wolfW, int wolfH)
