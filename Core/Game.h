@@ -3,6 +3,7 @@
 #include "../UI/Toolbar.h"
 #include "../UI/BudgetBar.h"
 #include <vector>
+#include <chrono>
 
 class Animal;
 
@@ -38,6 +39,8 @@ private:
 	int warehouseEggCount;
 	int warehouseMilkCount;
 
+	std::chrono::steady_clock::time_point lastTime;
+
 	void initializeFoodAreas();
 	void clearPlayingArea() const;
 	void drawFieldBackground() const;
@@ -63,6 +66,7 @@ public:
 	void collectMilk();
 
 	void gametimer(int level);
+	void decreaseTimer();
 	Game();
 	~Game();
 
