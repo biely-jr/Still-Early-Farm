@@ -18,11 +18,6 @@ namespace
 }
 
 Game::Game()
-	: paused(false),
-	eggCount(0),
-	milkCount(0),
-	warehouseEggCount(0),
-	warehouseMilkCount(0)
 {
 	//1 - Create the main window
 	pWind = CreateWind(config.windWidth, config.windHeight, config.wx, config.wy);
@@ -235,7 +230,7 @@ void Game::drawWolf() const
 	// 2. Start the loop at index 1 instead of 0 to skip the first vector wolf
 	for (size_t i = 1; i < wolves.size(); i++)
 	{
-		pWind->DrawImage(::wolfImagePath, wolves[i].x, wolves[i].y, 100, 100);
+		pWind->DrawImage(::wolfImagePath, wolves[i].x, wolves[i].y, 140, 140);
 	}
 }
 
@@ -281,29 +276,11 @@ void Game::drawEggsAndMilk() const
 {
 	pWind->DrawImage(eggImagePath, 610, 160, 90, 90);
 	pWind->DrawImage(milkImagePath, 720, 160, 80, 90);
-
-	pWind->SetPen(BLACK, 2);
-	pWind->SetBrush(WHITE);
-	pWind->DrawRectangle(610, 130, 700, 156, FILLED, 10, 10);
-	pWind->DrawRectangle(720, 130, 810, 156, FILLED, 10, 10);
-	pWind->SetFont(16, BOLD, BY_NAME, "Arial");
-	pWind->DrawString(620, 134, "Eggs: " + to_string(eggCount));
-	pWind->DrawString(730, 134, "Milk: " + to_string(milkCount));
 }
 
 void Game::drawWarehouse() const
 {
 	pWind->DrawImage(warehouseImagePath, 900, 315, 220, 180);
-
-	int textX = 50;
-	int textY = config.windHeight - 80;
-
-	pWind->SetPen(BLACK, 2);
-	pWind->SetFont(18, BOLD, BY_NAME, "Arial");
-
-	// Draw the text showing amounts
-	string warehouseStatus = "Warehouse - Eggs: " + to_string(warehouseEggCount) + " | Milk: " + to_string(warehouseMilkCount);
-	pWind->DrawString(textX, textY, warehouseStatus);
 }
 
 point Game::getRandomAnimalPosition(int animalWidth, int animalHeight) const
@@ -343,9 +320,6 @@ void Game::Restart()
 	level = 1;               // Resets the level back to 1
 	gametimer(level);		 // Resets the timer based on the level
 	animalcount = 0;
-	eggCount = 0;
-	milkCount = 0;
-	paused = false;
 
 	for (Animal* animal : animals)
 		delete animal;
@@ -389,27 +363,6 @@ window* Game::getWind() const
 	return pWind;
 }
 
-void Game::decreaseTimer()
-{
-	auto currentTime = std::chrono::steady_clock::now();
-
-	// Check if 1 second or more has passed
-	if (!paused && std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count() >= 1)
-	{
-		if (time > 0) {
-			time--; // Decrease timer
-		}
-		lastTime = currentTime; // Reset the clock tracker
-	}
-	else if (paused)
-	{
-		lastTime = currentTime;
-	}
-}
-
-//Not implemented yet
-// Lev 1 = 150 sec
-// Lev 2 = 140 sec and so on...
 void Game::gametimer(int level)
 {
 	time = 150 - (level - 1) * 10;
@@ -419,51 +372,18 @@ void Game::gametimer(int level)
 	}
 }
 
-//The screen is wiped clean and redrawn many times 
-// a second to create the illusion of animation
 void Game::redrawField() const
 {
-	clearPlayingArea(); //Wipes the main game window blank so that old frames don't leave a smeared trail on the screen.
+	clearPlayingArea();
 	drawFieldBackground();
 	drawfieldboundary();
 	drawAllFoodAreas();
 	drawEggsAndMilk();
 	drawWolf();
 	drawWarehouse();
-	//All draw functions sequentially draw the static background
-
-	int chickCounter = 1;
-	int cowCounter = 1;
-	//Each animal Individually has their own counter
 
 	for (Animal* animal : animals)
-	{
 		animal->draw();
-
-		//Responsible for writing text resembling the counter of the animal
-		pWind->SetPen(BLACK, 2);
-		pWind->SetFont(16, BOLD, BY_NAME, "Arial");
-		point p = animal->getRefPoint(); 
-		//It grabs the current (X, Y) coordinate of the animal being processed
-		//to know where to draw the number label respective to it
-
-		int xShift = 15;
-		int displayCounter = 1;
-
-		// If width >= 70, it's a Cow
-		if (animal->getWidth() >= 70)
-		{
-			xShift = 30;
-			displayCounter = cowCounter++; // Use and increment cow counter
-		}
-		else
-		{
-			xShift = 15;
-			displayCounter = chickCounter++; // Use and increment chick counter
-		}
-
-		pWind->DrawString(p.x + animal->getWidth() - xShift, p.y - 25, to_string(displayCounter));
-	}
 }
 
 bool Game::canAfford(int amount) const
@@ -482,12 +402,6 @@ bool Game::spendBudget(int amount)
 
 void Game::placeAnimal(AnimalType animalType)
 {
-	if (paused)
-	{
-		printMessage("Resume the game before adding more animals.");
-		return;
-	}
-
 	int animalCost = chickCost;
 	int animalWidth = 50;
 	int animalHeight = 50;
@@ -532,54 +446,6 @@ void Game::placeAnimal(AnimalType animalType)
 	printMessage(animalName + " added. Cost = $" + to_string(animalCost));
 }
 
-void Game::pauseGame()
-{
-	paused = true;
-	printMessage("Game paused.");
-}
-
-void Game::resumeGame()
-{
-	paused = false;
-	printMessage("Game resumed.");
-}
-
-bool Game::isPaused() const
-{
-	return paused;
-}
-
-void Game::registerAnimalProduct(const string& productLabel)
-{
-	if (productLabel == "Egg")
-		eggCount++;
-	else if (productLabel == "Milk")
-		milkCount++;
-}
-
-void Game::updateAnimalProduction(int elapsedSeconds)
-{
-	for (Animal* animal : animals)
-		animal->advanceProduction(elapsedSeconds);
-}
-
-void Game::collectEggs()
-{
-	if (eggCount > 0) {
-		warehouseEggCount += eggCount;
-		eggCount = 0; // Remove from the icon bar
-		updatestatusbar(); // Refresh UI if necessary
-	}
-}
-
-void Game::collectMilk()
-{
-	if (milkCount > 0) {
-		warehouseMilkCount += milkCount;
-		milkCount = 0; // Remove from the icon bar
-		updatestatusbar(); // Refresh UI if necessary
-	}
-}
 
 void Game::go()
 {
@@ -594,31 +460,24 @@ void Game::go()
 	pWind->ChangeTitle("Farm Frenzy");
 
 	//Set up the clock tracker before the loop starts
-	lastTime = std::chrono::steady_clock::now();
-	auto lastProductionTick = lastTime;
+	auto lastTime = std::chrono::steady_clock::now();
 
 	do
 	{
-		decreaseTimer();
+		auto currentTime = std::chrono::steady_clock::now();
 
-		auto currentTime = std::chrono::steady_clock::now(); // Now used for production tracking
-
-		if (!paused)
+		// Check if 1 second has passed
+		if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count() >= 1)
 		{
-			int elapsedProductionSeconds = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastProductionTick).count());
-			if (elapsedProductionSeconds >= 1)
-			{
-				updateAnimalProduction(elapsedProductionSeconds);
-				lastProductionTick = currentTime;
+			if (time > 0) {
+				time--; // Decrease timer
 			}
-		}
-		else
-		{
-			lastProductionTick = currentTime;
+			lastTime = currentTime; // Reset the clock tracker
 		}
 
 		pWind->SetBuffering(true); // Prevent flickering
 
+		printMessage("Press any button to start");
 		string budget_string_code = "BUDGET = $" + to_string(budget);
 		string budget_string = "BUDGET: $" + to_string(budget);
 		string prices = " | Chick: $100 | Cow: $200 | water: $50 ";
@@ -630,40 +489,26 @@ void Game::go()
 		drawfieldboundary();
 		updatestatusbar();
 
-		clicktype click = getMouseClick(x, y);	//Get the coordinates of the end-user click
+		clicktype click = getMouseClick(x, y);	//Get the coordinates of the user click
 
-		if (!paused)
-			updatePlayArea();
-		else if (paused)
-			printMessage("Game paused");
-		else
-			redrawField();
+		updatePlayArea();
 
 		pWind->UpdateBuffer(); // Update the buffer after all drawing is finished
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+		//if (gameMode == MODE_DSIGN)		//Game is in the Desgin mode
+		//{
+			//[1] If user clicks on the Toolbar
 		if (click == LEFT_CLICK && y >= 0 && y < config.toolBarHeight)
 		{
-			isExit = gameToolbar->handleClick(x, y); //clicked on the Toolbar section
+			isExit = gameToolbar->handleClick(x, y);
 		}
 		else if (click == LEFT_CLICK && y >= config.toolBarHeight && y < 2 * config.toolBarHeight)
 		{
-			isExit = gameBudgetbar->handleClick(x, y); //clicked on the budgetbar section
+			isExit = gameBudgetbar->handleClick(x, y);
 		}
-		else if (click == LEFT_CLICK && y >= 2 * config.toolBarHeight)
-		{
-			// Check Egg Icon bounds (from drawEggsAndMilk: X: 610-700, Y: 130-250)
-			if (x >= 610 && x <= 700 && y >= 130 && y <= 250)
-			{
-				collectEggs();
-			}
-			// Check Milk Icon bounds (from drawEggsAndMilk: X: 720-810, Y: 130-250)
-			else if (x >= 720 && x <= 810 && y >= 130 && y <= 250)
-			{
-				collectMilk();
-			}
-		}
+		//}
 
 	} while (!isExit);
 }
@@ -732,37 +577,9 @@ void Game::updatePlayArea()
 
 	// 4. Draw the grass (and any old array animals) so it sits on the ground
 	gameBudgetbar->moveAllAnimals();
-	// Consequentally it repeatedly calls void Budgetbar::moveAllAnimals() in BudgetBar.cpp due to iteration
 
 	// 5. Draw the moving wolf and new vector animals ON TOP of the grass
 	drawWolf();
-
-	int chickCounter = 1;
-	int cowCounter = 1;
-
 	for (Animal* animal : animals)
-	{
 		animal->draw();
-
-		pWind->SetPen(BLACK, 2);
-		pWind->SetFont(16, BOLD, BY_NAME, "Arial");
-		point p = animal->getRefPoint();
-
-		int xShift = 15;
-		int displayCounter = 1;
-
-		// If width >= 70, it's a Cow. Otherwise, it's a Chick.
-		if (animal->getWidth() >= 70)
-		{
-			xShift = 30;
-			displayCounter = cowCounter++; // Use and increment cow counter
-		}
-		else
-		{
-			xShift = 15;
-			displayCounter = chickCounter++; // Use and increment chick counter
-		}
-
-		pWind->DrawString(p.x + animal->getWidth() - xShift, p.y - 25, to_string(displayCounter));
-	}
 }
