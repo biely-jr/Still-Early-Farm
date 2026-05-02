@@ -33,11 +33,57 @@ void ExitIcon::onClick()
 	//TO DO: add code for cleanup and game exit here
 }
 
+PauseIcon::PauseIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : ToolbarIcon(r_pGame, r_point, r_width, r_height, img_path)
+{
+}
+
+void PauseIcon::draw() const
+{
+	window* pWind = pGame->getWind();
+	pWind->DrawImage("images\\pause-button-outline-red-icon.jpg", RefPoint.x, RefPoint.y, width, height);
+}
+
+void PauseIcon::onClick()
+{
+	pGame->pauseGame();
+}
+
+ResumeIcon::ResumeIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : ToolbarIcon(r_pGame, r_point, r_width, r_height, img_path)
+{
+}
+
+void ResumeIcon::onClick()
+{
+	pGame->resumeGame();
+}
+
+SaveIcon::SaveIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : ToolbarIcon(r_pGame, r_point, r_width, r_height, img_path)
+{
+}
+
+void SaveIcon::onClick()
+{
+	pGame->saveGame();
+}
+
+LoadGameIcon::LoadGameIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : ToolbarIcon(r_pGame, r_point, r_width, r_height, img_path)
+{
+}
+
+void LoadGameIcon::onClick()
+{
+	pGame->loadGame();
+}
+
 Toolbar::Toolbar(Game* r_pGame, point r_point, int r_width, int r_height) : Drawable(r_pGame, r_point, r_width, r_height)
 {
 	//First prepare List of images for each icon
 	//To control the order of these images in the menu, reoder them in enum ICONS above	
 	iconsImages[ICON_RESTART] = "images\\RESTART.jpg";
+	iconsImages[ICON_PAUSE] = "images\\pause-button-outline-red-icon.jpg";
+	iconsImages[ICON_RESUME] = "images\\Resume.converted.jpg";
+	iconsImages[ICON_SAVE] = "images\\Save.converted.jpg";
+	iconsImages[ICON_LOAD] = "images\\Load.converted.jpg";
 	iconsImages[ICON_EXIT] = "images\\EXIT.jpg";
 	point p;
 	p.x = 0;
@@ -48,6 +94,14 @@ Toolbar::Toolbar(Game* r_pGame, point r_point, int r_width, int r_height) : Draw
 	//For each icon in the tool bar create an object 
 	iconsList[ICON_RESTART] = new RestartIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_RESTART]);
 	p.x += config.iconWidth;
+	iconsList[ICON_PAUSE] = new PauseIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_PAUSE]);
+	p.x += config.iconWidth;
+	iconsList[ICON_RESUME] = new ResumeIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_RESUME]);
+	p.x += config.iconWidth;
+	iconsList[ICON_SAVE] = new SaveIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_SAVE]);
+	p.x += config.iconWidth;
+	iconsList[ICON_LOAD] = new LoadGameIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_LOAD]);
+	p.x += config.iconWidth;
 	iconsList[ICON_EXIT] = new ExitIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_EXIT]);
 	//p.x += config.iconWidth;
 }
@@ -56,7 +110,7 @@ Toolbar::~Toolbar()
 {
 	for (int i = 0; i < ICON_COUNT; i++)
 		delete iconsList[i];
-	delete iconsList;
+	delete[] iconsList;
 }
 
 void Toolbar::draw() const
@@ -70,7 +124,7 @@ void Toolbar::draw() const
 
 bool Toolbar::handleClick(int x, int y)
 {
-	if (x > ICON_COUNT * config.iconWidth)	//click outside toolbar boundaries
+	if (x >= ICON_COUNT * config.iconWidth)	//click outside toolbar boundaries
 		return false;
 
 
