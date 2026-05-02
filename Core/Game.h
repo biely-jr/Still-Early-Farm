@@ -31,6 +31,12 @@ private:
 	std::vector<Animal*> animals;
 	std::vector<point> wolves;
 	FoodArea foodAreas[2];
+	bool paused;
+	int eggCount;
+	int milkCount;
+
+	int warehouseEggCount;
+	int warehouseMilkCount;
 
 	void initializeFoodAreas();
 	void clearPlayingArea() const;
@@ -45,7 +51,7 @@ private:
 
 public:
 	int budget = 5000;
-	int level = 1;
+	int level = 3;
 	int time = 150;
 	int animalcount = 0;
 	string wolfImagePath;
@@ -53,11 +59,15 @@ public:
 	mutable int wolfY;
 	void moveWolf() const;
 
+	void collectEggs();
+	void collectMilk();
+
 	void gametimer(int level);
 	Game();
 	~Game();
 
 	void updatePlayArea();
+	void updateAnimalProduction(int elapsedSeconds);
 
 	clicktype getMouseClick(int& x, int& y) const; //Get coordinate where user clicks and returns click type (left/right)
 	string getSrting() const;	 //Returns a string entered by the user
@@ -81,6 +91,12 @@ public:
 	bool canAfford(int amount) const;
 	bool spendBudget(int amount);
 	void placeAnimal(AnimalType animalType);
+	void pauseGame();
+	void resumeGame();
+	void saveGame();
+	void loadGame();
+	bool isPaused() const;
+	void registerAnimalProduct(const string& productLabel);
 
 
 	window* getWind() const;		//returns a pointer to the graphics window
