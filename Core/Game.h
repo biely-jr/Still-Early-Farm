@@ -3,7 +3,6 @@
 #include "../UI/Toolbar.h"
 #include "../UI/BudgetBar.h"
 #include <vector>
-#include <chrono>
 
 class Animal;
 
@@ -32,14 +31,6 @@ private:
 	std::vector<Animal*> animals;
 	std::vector<point> wolves;
 	FoodArea foodAreas[2];
-	bool paused;
-	int eggCount;
-	int milkCount;
-
-	int warehouseEggCount;
-	int warehouseMilkCount;
-
-	std::chrono::steady_clock::time_point lastTime;
 
 	void initializeFoodAreas();
 	void clearPlayingArea() const;
@@ -62,16 +53,11 @@ public:
 	mutable int wolfY;
 	void moveWolf() const;
 
-	void collectEggs();
-	void collectMilk();
-
 	void gametimer(int level);
-	void decreaseTimer();
 	Game();
 	~Game();
 
 	void updatePlayArea();
-	void updateAnimalProduction(int elapsedSeconds);
 
 	clicktype getMouseClick(int& x, int& y) const; //Get coordinate where user clicks and returns click type (left/right)
 	string getSrting() const;	 //Returns a string entered by the user
@@ -95,10 +81,6 @@ public:
 	bool canAfford(int amount) const;
 	bool spendBudget(int amount);
 	void placeAnimal(AnimalType animalType);
-	void pauseGame();
-	void resumeGame();
-	bool isPaused() const;
-	void registerAnimalProduct(const string& productLabel);
 
 
 	window* getWind() const;		//returns a pointer to the graphics window
