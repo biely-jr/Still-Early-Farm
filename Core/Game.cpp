@@ -149,7 +149,7 @@ void Game::clearBudget() const
 
 void Game::printBudget(string msg) const
 {
-	clearBudget();	//First clear the sftatus bar
+	clearBudget();	//First clear the status bar
 
 	pWind->SetPen(config.penColor, 50);
 	pWind->SetFont(24, BOLD, BY_NAME, "Arial");
@@ -341,44 +341,44 @@ void Game::Restart()
 {
 	cout << "Restart button clicked" << endl;
 	// 1. Reset budget
-	budget = 5000;
-	animalcount = 0;
-	level = 1;               // Resets the level back to 1
-	gametimer(level);		 // Resets the timer based on the level
-	animalcount = 0;
-	eggCount = 0;
-	milkCount = 0;
-	warehouseEggCount = 0;
-	warehouseMilkCount = 0;
-	paused = false;
+	if (!isPaused()) {
+		budget = 5000;
+		animalcount = 0;
+		level = 1;               // Resets the level back to 1
+		gametimer(level);		 // Resets the timer based on the level
+		eggCount = 0;
+		milkCount = 0;
+		warehouseEggCount = 0;
+		warehouseMilkCount = 0;
 
-	for (Animal* animal : animals)
-		delete animal;
-	animals.clear();
+		for (Animal* animal : animals)
+			delete animal;
+		animals.clear();
 
-	// 2. Clear the entire window, basically erases the set window and makes a new one
-	// How it works : it is used in drawing a giant rectangle that covers the intial gameplay
-	pWind->SetPen(config.bkGrndColor, 1);
-	pWind->SetBrush(config.bkGrndColor);
-	pWind->DrawRectangle(0, 0, config.windWidth, config.windHeight);
+		// 2. Clear the entire window, basically erases the set window and makes a new one
+		// How it works : it is used in drawing a giant rectangle that covers the initial gameplay
+		pWind->SetPen(config.bkGrndColor, 1);
+		pWind->SetBrush(config.bkGrndColor);
+		pWind->DrawRectangle(0, 0, config.windWidth, config.windHeight);
 
-	// 3. Delete old UI elements, deletes their pointers to prevent memory leaks
-	delete gameToolbar;
-	delete gameBudgetbar;
+		// 3. Delete old UI elements, deletes their pointers to prevent memory leaks
+		delete gameToolbar;
+		delete gameBudgetbar;
 
-	// 4. Recreate UI (toolbar + budget bar)
-	createToolbar();
-	createBudgetbar();
+		// 4. Recreate UI (toolbar + budget bar)
+		createToolbar();
+		createBudgetbar();
 
-	// 5. Clear status bar
-	clearStatusBar();
+		// 5. Clear status bar
+		clearStatusBar();
 
-	initializeFoodAreas();
-	spawnWolves();
-	redrawField();
-	updatestatusbar();
-	printBudget("BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | water: $50 ");
-	printMessage("Game restarted.");
+		initializeFoodAreas();
+		spawnWolves();
+		redrawField();
+		updatestatusbar();
+		printBudget("BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | water: $50 ");
+		printMessage("Game restarted.");
+	}
 }
 
 void Game::printMessage(string msg) const
@@ -641,7 +641,7 @@ void Game::go()
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-		//if (gameMode == MODE_DSIGN)		//Game is in the Desgin mode
+		//if (gameMode == MODE_DSIGN)		//Game is in the Design mode
 		//{
 			//[1] If user clicks on the Toolbar
 		if (click == LEFT_CLICK && y >= 0 && y < config.toolBarHeight)
