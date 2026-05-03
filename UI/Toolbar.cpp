@@ -78,7 +78,7 @@ void LoadGameIcon::onClick()
 Toolbar::Toolbar(Game* r_pGame, point r_point, int r_width, int r_height) : Drawable(r_pGame, r_point, r_width, r_height)
 {
 	//First prepare List of images for each icon
-	//To control the order of these images in the menu, reoder them in enum ICONS above	
+	//To control the order of these images in the menu, reorder them in enum ICONS above	
 	iconsImages[ICON_RESTART] = "images\\RESTART.jpg";
 	iconsImages[ICON_PAUSE] = "images\\pause-button-outline-red-icon.jpg";
 	iconsImages[ICON_RESUME] = "images\\Resume.converted.jpg";
@@ -128,13 +128,13 @@ bool Toolbar::handleClick(int x, int y)
 		return false;
 
 
-	//Check whick icon was clicked
+	//Check which icon was clicked
 	//his assumes that menu icons are lined up horizontally
 	//Divide x co-ord of the point clicked by the icon width (int division)
 	//if division result is 0 ==> first icon is clicked, if 1 ==> 2nd icon and so on
 
 	int clickedIconIndex = (x / config.iconWidth);
-	iconsList[clickedIconIndex]->onClick();	//execute onClick action of clicled icon
+	iconsList[clickedIconIndex]->onClick();	//execute onClick action of clicked icon
 
 	if (clickedIconIndex == ICON_EXIT) return true;
 
