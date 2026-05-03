@@ -56,6 +56,48 @@ void CowIcon::onClick()
 	pGame->placeAnimal(ANIMAL_COW);
 }
 
+WaterIcon::WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path)
+	: BudgetbarIcon(r_pGame, r_point, r_width, r_height, img_path)
+{
+	count = 0;
+	grassList = new point[50]; // Max 50 green areas
+}
+
+// The randomized coordinates (X,Y) are calculated and stored through this function implementation
+void WaterIcon::onClick()
+{
+	if (pGame->isPaused())
+	{
+		pGame->printMessage("Resume the game before watering.");
+		return;
+	}
+
+	if (pGame->budget >= 50)   // Price set to 50
+	{
+		pGame->budget -= 50;
+
+		pGame->clearBudget();
+		string budget_string = "BUDGET = $" + to_string(pGame->budget);
+		pGame->printBudget(budget_string);
+
+		point p;
+		std::random_device rd;
+		std::mt19937 gen(rd());
+
+		std::uniform_int_distribution<int> dist1(range_min_x, range_max_x);
+		p.x = dist1(gen); // Gets a random X and Y coordinate
+
+		std::uniform_int_distribution<int> dist2(range_min_y, range_max_y);
+		p.y = dist2(gen);
+
+		if (count < 50)
+		{
+			grassList[count] = p;
+			count++;
+		}
+	}
+}
+
 Budgetbar::Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height) : Drawable(r_pGame, r_point, r_width, r_height)
 {
 	//To control the order of these images in the menu, they must be ordered as follows	to ensure the animals pass OVER the grass patch
@@ -88,7 +130,7 @@ Budgetbar::~Budgetbar()
 {
 	for (int i = 0; i < ANIMAL_COUNT; i++)
 		delete iconsList[i];
-	delete[] iconsList; // Adjusted to array delete from text version style
+	delete[] iconsList;
 }
 
 void Budgetbar::draw() const
@@ -141,52 +183,10 @@ void CowIcon::moveAnimals()
 	}
 }
 
-WaterIcon::WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path)
-	: BudgetbarIcon(r_pGame, r_point, r_width, r_height, img_path)
-{
-	count = 0;
-	grassList = new point[50]; // Max 50 green areas
-}
-
 void WaterIcon::draw() const
 {
 	window* pWind = pGame->getWind();
 	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
-}
-
-// The randomized coordinates (X,Y) are calculated and stored through this function implementation
-void WaterIcon::onClick()
-{
-	if (pGame->isPaused())
-	{
-		pGame->printMessage("Resume the game before watering.");
-		return;
-	}
-
-	if (pGame->budget >= 50)   // Price set to 50
-	{
-		pGame->budget -= 50;
-
-		pGame->clearBudget();
-		string budget_string = "BUDGET = $" + to_string(pGame->budget);
-		pGame->printBudget(budget_string);
-
-		point p;
-		std::random_device rd;
-		std::mt19937 gen(rd());
-
-		std::uniform_int_distribution<int> dist1(range_min_x, range_max_x);
-		p.x = dist1(gen); // Gets a random X and Y coordinate
-
-		std::uniform_int_distribution<int> dist2(range_min_y, range_max_y);
-		p.y = dist2(gen);
-
-		if (count < 50)
-		{
-			grassList[count] = p;
-			count++;
-		}
-	}
 }
 
 void WaterIcon::moveAnimals()
@@ -201,23 +201,12 @@ void WaterIcon::moveAnimals()
 }
 
 void Budgetbar::moveAllAnimals()
-//moveAnimals function (child) BELONGS TO BudgetBar (Parent)
 {
 	// Tell every animal icon to move its respective animals where it iterates through iconsList
 	// Which has pointers to all animals
 	for (int i = 0; i < ANIMAL_COUNT; i++) {
 		if (iconsList[i] != nullptr) { //Ensures the icon actually exists
 			iconsList[i]->moveAnimals();
-		}
-	}
-}
-
-void Budgetbar::catchAllAnimals(int wolfX, int wolfY, int wolfW, int wolfH)
-{
-	// Send the wolf's coordinates to all icons so they can check their animals
-	for (int i = 0; i < ANIMAL_COUNT; i++) {
-		if (iconsList[i] != nullptr) {
-			iconsList[i]->catchAnimals(wolfX, wolfY, wolfW, wolfH);
 		}
 	}
 }
