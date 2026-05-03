@@ -51,7 +51,7 @@ private:
 
 public:
 	int budget = 5000;
-	int level = 3;
+	int level = 1;
 	int time = 150;
 	int animalcount = 0;
 	string wolfImagePath;
