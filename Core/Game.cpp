@@ -15,8 +15,15 @@ namespace
 	const string eggImagePath = "images\\Egg.jpg";
 	const string milkImagePath = "images\\Milk.jpg";
 	const string warehouseImagePath = "images\\warehouse.jpg";
+	const string sellImagePath = "images\\Sell.jpg";
 	const int eggPrice = 25;
 	const int milkPrice = 50;
+	const int sellButtonLeft = 1375;
+	const int sellButtonRight = 1455;
+	const int eggSellButtonTop = 352;
+	const int eggSellButtonBottom = 382;
+	const int milkSellButtonTop = 397;
+	const int milkSellButtonBottom = 427;
 }
 
 Game::Game()
@@ -141,8 +148,8 @@ void Game::createBudgetbar()
 
 void Game::initializeFoodAreas()
 {
-	foodAreas[0] = { {120, 150}, 180, 90, 5, LIGHTGREEN, "CHICK FOOD" }; // 4 & 5 is how many food in the foodarea
-	foodAreas[1] = { {350, 150}, 180, 90, 7, KHAKI, "COW FOOD" };
+	foodAreas[0] = { {0, 0}, 180, 90, 0, LIGHTGREEN, "FOOD" };
+	foodAreas[1] = { {0, 0}, 180, 90, 0, LIGHTGREEN, "FOOD" };
 }
 
 void Game::clearBudget() const
@@ -293,9 +300,6 @@ void Game::drawFoodArea(const FoodArea& area) const
 
 	pWind->SetPen(BLACK, 2);
 	pWind->SetBrush(WHITE);
-	pWind->DrawRectangle(area.topLeft.x + 55, area.topLeft.y - 34, area.topLeft.x + 125, area.topLeft.y - 6, FILLED, 10, 10);
-	pWind->SetFont(18, BOLD, BY_NAME, "Arial");
-	pWind->DrawString(area.topLeft.x + 84, area.topLeft.y - 30, to_string(area.counter));
 	pWind->SetFont(16, BOLD, BY_NAME, "Arial");
 	pWind->DrawString(area.topLeft.x + 22, area.topLeft.y + 32, area.label);
 }
@@ -306,34 +310,20 @@ void Game::drawAllFoodAreas() const
 		drawFoodArea(area);
 }
 
-void Game::drawEggsAndMilk() const
-{
-	pWind->DrawImage(eggImagePath, 610, 160, 90, 90);
-	pWind->DrawImage(milkImagePath, 720, 160, 80, 90);
-
-	pWind->SetPen(BLACK, 2);
-	pWind->SetBrush(WHITE);
-	pWind->DrawRectangle(610, 130, 700, 156, FILLED, 10, 10);
-	pWind->DrawRectangle(720, 130, 810, 156, FILLED, 10, 10);
-	pWind->SetFont(16, BOLD, BY_NAME, "Arial");
-	pWind->DrawString(620, 134, "Eggs: " + to_string(eggCount));
-	pWind->DrawString(730, 134, "Milk: " + to_string(milkCount));
-}
-
 void Game::drawWarehouse() const
 {
 	pWind->DrawImage(warehouseImagePath, 900, 315, 220, 180);
 
 	pWind->SetPen(BLACK, 2);
 	pWind->SetBrush(WHITE);
-	pWind->DrawRectangle(1135, 335, 1390, 445, FILLED, 10, 10);
-
-	pWind->DrawImage(eggImagePath, 1150, 350, 45, 45);
-	pWind->DrawImage(milkImagePath, 1150, 395, 40, 45);
+	pWind->DrawRectangle(1135, 335, 1470, 445, FILLED, 10, 10);
 
 	pWind->SetFont(18, BOLD, BY_NAME, "Arial");
-	pWind->DrawString(1205, 355, "Eggs: " + to_string(warehouseEggCount) + "  Price: $" + to_string(eggPrice));
-	pWind->DrawString(1205, 402, "Milk: " + to_string(warehouseMilkCount) + "  Price: $" + to_string(milkPrice));
+	pWind->DrawString(1160, 355, "Eggs: " + to_string(warehouseEggCount) + "  $" + to_string(eggPrice));
+	pWind->DrawString(1160, 402, "Milk: " + to_string(warehouseMilkCount) + "  $" + to_string(milkPrice));
+
+	pWind->DrawImage(sellImagePath, sellButtonLeft, eggSellButtonTop, sellButtonRight - sellButtonLeft, eggSellButtonBottom - eggSellButtonTop);
+	pWind->DrawImage(sellImagePath, sellButtonLeft, milkSellButtonTop, sellButtonRight - sellButtonLeft, milkSellButtonBottom - milkSellButtonTop);
 }
 
 point Game::getRandomAnimalPosition(int animalWidth, int animalHeight) const
@@ -355,13 +345,44 @@ point Game::getRandomAnimalPosition(int animalWidth, int animalHeight) const
 	return p;
 }
 
-void Game::consumeFoodArea(int areaIndex)
+point Game::getRandomFoodAreaPosition() const
 {
-	if (areaIndex < 0 || areaIndex >= 2)
-		return;
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
 
-	if (foodAreas[areaIndex].counter > 0)
-		foodAreas[areaIndex].counter--;
+	const int foodWidth = 180;
+	const int foodHeight = 90;
+	const int minX = 40;
+	const int maxX = config.windWidth - foodWidth - 40;
+	const int minY = (2 * config.toolBarHeight) + 150;
+	const int maxY = config.windHeight - config.statusBarHeight - foodHeight - 20;
+
+	std::uniform_int_distribution<int> distX(minX, maxX);
+	std::uniform_int_distribution<int> distY(minY, maxY);
+
+	point p;
+	p.x = distX(gen);
+	p.y = distY(gen);
+	return p;
+}
+
+bool Game::isAnimalStandingOnFood(const Animal* animal) const
+{
+	point p = animal->getRefPoint();
+	int w = animal->getWidth();
+	int h = animal->getHeight();
+
+	for (const FoodArea& area : foodAreas)
+	{
+		if (area.counter > 0 &&
+			p.x < area.topLeft.x + area.width && p.x + w > area.topLeft.x &&
+			p.y < area.topLeft.y + area.height && p.y + h > area.topLeft.y)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void Game::Restart()
@@ -439,9 +460,7 @@ void Game::redrawField() const
 	drawFieldBackground();
 	drawfieldboundary();
 	drawAllFoodAreas();
-	drawEggsAndMilk();
 	drawWolf();
-	drawWarehouse();
 
 	int chickCounter = 1;
 	int cowCounter = 1;
@@ -471,6 +490,8 @@ void Game::redrawField() const
 
 		pWind->DrawString(p.x + animal->getWidth() - xShift, p.y - 25, to_string(displayCounter));
 	}
+
+	drawWarehouse();
 }
 
 bool Game::canAfford(int amount) const
@@ -499,7 +520,6 @@ void Game::placeAnimal(AnimalType animalType)
 	int animalWidth = 50;
 	int animalHeight = 50;
 	string imagePath = "images\\chick.jpg";
-	int foodAreaIndex = 0;
 	string animalName = "Chicken";
 
 	if (animalType == ANIMAL_COW)
@@ -508,14 +528,7 @@ void Game::placeAnimal(AnimalType animalType)
 		animalWidth = 70;
 		animalHeight = 70;
 		imagePath = "images\\cow.jpg";
-		foodAreaIndex = 1;
 		animalName = "Cow";
-	}
-
-	if (foodAreas[foodAreaIndex].counter <= 0)
-	{
-		printMessage(animalName + " cannot be added because its food is finished.");
-		return;
 	}
 
 	if (!spendBudget(animalCost))
@@ -532,11 +545,34 @@ void Game::placeAnimal(AnimalType animalType)
 		animals.push_back(new Cow(this, animalPosition, animalWidth, animalHeight, imagePath));
 
 	animalcount++;
-	consumeFoodArea(foodAreaIndex);
 	updatestatusbar();
 	redrawField();
 	printBudget("BUDGET = $" + to_string(budget));
 	printMessage(animalName + " added. Cost = $" + to_string(animalCost));
+}
+
+void Game::placeFoodArea()
+{
+	if (paused)
+	{
+		printMessage("Resume the game before watering.");
+		return;
+	}
+
+	if (!spendBudget(50))
+	{
+		printMessage("Not enough budget for water.");
+		return;
+	}
+
+	static int nextFoodArea = 0;
+	foodAreas[nextFoodArea].topLeft = getRandomFoodAreaPosition();
+	foodAreas[nextFoodArea].counter = 1;
+	nextFoodArea = (nextFoodArea + 1) % 2;
+
+	redrawField();
+	printBudget("BUDGET = $" + to_string(budget));
+	printMessage("Food area added. Cost = $50.");
 }
 
 void Game::pauseGame()
@@ -561,6 +597,42 @@ void Game::loadGame()
 	printMessage("Load clicked.");
 }
 
+void Game::sellEggProducts()
+{
+	const int earnings = warehouseEggCount * eggPrice;
+
+	if (earnings <= 0)
+	{
+		printMessage("No eggs to sell.");
+		return;
+	}
+
+	budget += earnings;
+	warehouseEggCount = 0;
+
+	redrawField();
+	printBudget("BUDGET = $" + to_string(budget));
+	printMessage("Eggs sold for $" + to_string(earnings) + ".");
+}
+
+void Game::sellMilkProducts()
+{
+	const int earnings = warehouseMilkCount * milkPrice;
+
+	if (earnings <= 0)
+	{
+		printMessage("No milk to sell.");
+		return;
+	}
+
+	budget += earnings;
+	warehouseMilkCount = 0;
+
+	redrawField();
+	printBudget("BUDGET = $" + to_string(budget));
+	printMessage("Milk sold for $" + to_string(earnings) + ".");
+}
+
 bool Game::isPaused() const
 {
 	return paused;
@@ -569,15 +641,26 @@ bool Game::isPaused() const
 void Game::registerAnimalProduct(const string& productLabel)
 {
 	if (productLabel == "Egg")
-		eggCount++;
+	{
+		warehouseEggCount++;
+		goalProgress++;
+		checkLevelGoal();
+	}
 	else if (productLabel == "Milk")
-		milkCount++;
+	{
+		warehouseMilkCount++;
+		goalProgress++;
+		checkLevelGoal();
+	}
 }
 
 void Game::updateAnimalProduction(int elapsedSeconds)
 {
 	for (Animal* animal : animals)
-		animal->advanceProduction(elapsedSeconds);
+	{
+		if (isAnimalStandingOnFood(animal))
+			animal->advanceProduction(elapsedSeconds);
+	}
 }
 
 void Game::collectEggs()
@@ -622,6 +705,18 @@ bool Game::isPointInsideWarehouse(int x, int y) const // tests warehouse click b
 {
 	return x >= 900 && x <= 1120 && //checks the warehouse X range
 		y >= 315 && y <= 495; //checks the warehouse Y range
+}
+
+bool Game::isPointInsideEggSellButton(int x, int y) const
+{
+	return x >= sellButtonLeft && x <= sellButtonRight &&
+		y >= eggSellButtonTop && y <= eggSellButtonBottom;
+}
+
+bool Game::isPointInsideMilkSellButton(int x, int y) const
+{
+	return x >= sellButtonLeft && x <= sellButtonRight &&
+		y >= milkSellButtonTop && y <= milkSellButtonBottom;
 }
 
 void Game::showWarehouseWindow() const //starts the function that opens a new warehouse window
@@ -700,15 +795,15 @@ void Game::updateStatusMessageTimer()
 
 void Game::handlePlayAreaClick(int x, int y)
 {
-	if (x >= 610 && x <= 700 && y >= 130 && y <= 250) //checks whether the egg icon area was clicked
+	if (isPointInsideEggSellButton(x, y))
 	{
-		collectEggs(); //moves eggs into the warehouse if the egg area was clicked
+		sellEggProducts();
 		return;
 	}
 
-	if (x >= 720 && x <= 810 && y >= 130 && y <= 250)
+	if (isPointInsideMilkSellButton(x, y))
 	{
-		collectMilk();
+		sellMilkProducts();
 		return;
 	}
 
@@ -924,8 +1019,6 @@ void Game::updatePlayArea()
 	drawFieldBackground();
 	drawfieldboundary();
 	drawAllFoodAreas();
-	drawEggsAndMilk();
-	drawWarehouse();
 
 	// 4. Draw the grass (and any old array animals) so it sits on the ground
 	gameBudgetbar->moveAllAnimals();
@@ -961,4 +1054,6 @@ void Game::updatePlayArea()
 
 		pWind->DrawString(p.x + animal->getWidth() - xShift, p.y - 25, to_string(displayCounter));
 	}
+
+	drawWarehouse();
 }
