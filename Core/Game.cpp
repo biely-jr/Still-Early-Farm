@@ -24,7 +24,13 @@ Game::Game()
 	eggCount(0),
 	milkCount(0),
 	warehouseEggCount(0),
-	warehouseMilkCount(0)
+	warehouseMilkCount(0),
+	goalTarget(5),
+	goalProgress(0),
+	mainWolfVisible(true),
+	consecutiveWolfClicks(0),
+	statusMessage(""),
+	statusMessageTimer(0)
 {
 	//1 - Create the main window
 	pWind = CreateWind(config.windWidth, config.windHeight, config.wx, config.wy);
@@ -168,7 +174,9 @@ void Game::clearStatusBar() const
 void Game::updatestatusbar() const
 {
 	clearStatusBar();
-	string status = "Level: " + to_string(level) + " | Timer: " + to_string(time) + " | Animals: " + to_string(animalcount);
+	string status = "Level: " + to_string(level) + " | Timer: " + to_string(time) + " | Animals: " + to_string(animalcount) + " | Goal: " + to_string(goalProgress) + "/" + to_string(goalTarget);
+	if (statusMessageTimer > 0 && !statusMessage.empty()) // checks whether a temporary message should still be shown
+		status += " | " + statusMessage;
 	pWind->SetPen(config.penColor);
 	pWind->SetFont(20, BOLD, BY_NAME, "Arial");
 	pWind->DrawString(10, config.windHeight - (int)(0.85 * config.statusBarHeight), status);
@@ -206,7 +214,8 @@ void Game::drawFieldBackground() const
 
 void Game::spawnWolves()
 {
-	wolves.clear();
+	wolves.clear(); 
+	wolfHitCounts.clear(); //When new wolves are spawned, it clears the old hit counters too, so the vector stays in sync with the wolves vector
 
 	int wolvesToSpawn = 1 + (level / 2);
 	int minX = 50;
@@ -224,6 +233,7 @@ void Game::spawnWolves()
 		wolfPosition.x = randX;
 		wolfPosition.y = randY;
 		wolves.push_back(wolfPosition);
+		wolfHitCounts.push_back(0);
 	}
 
 	updatestatusbar();
@@ -232,31 +242,57 @@ void Game::spawnWolves()
 void Game::drawWolf() const
 {
 	// 1. Draw primary moving wolf
-	pWind->DrawImage(Game::wolfImagePath, wolfX, wolfY, 140, 140);
+	if (mainWolfVisible)
+		pWind->DrawImage(Game::wolfImagePath, wolfX, wolfY, 140, 140);
 
-	// 2. Start the loop at index 1 instead of 0 to skip the first vector wolf
-	for (size_t i = 1; i < wolves.size(); i++)
+	// 2. Draw every spawned wolf from the vector
+	for (size_t i = 0; i < wolves.size(); i++)
 	{
 		pWind->DrawImage(::wolfImagePath, wolves[i].x, wolves[i].y, 100, 100);
 	}
 }
 
-void Game::moveWolf() const
+void Game::moveWolf()
 {
+	if (!mainWolfVisible)
+	{
+		for (size_t i = 0; i < wolves.size(); i++)
+		{
+			wolves[i].x += (rand() % 31 - 15);
+			wolves[i].y += (rand() % 31 - 15);
+
+			if (wolves[i].x < 0) wolves[i].x = 0;
+			if (wolves[i].x > config.windWidth - 100) wolves[i].x = config.windWidth - 100;
+			if (wolves[i].y < config.toolBarHeight * 2) wolves[i].y = config.toolBarHeight * 2;
+			if (wolves[i].y > config.windHeight - config.statusBarHeight - 100) wolves[i].y = config.windHeight - config.statusBarHeight - 100;
+		}
+		return;
+	}
+
 	// Generates a random number between -15 and +15 to shift X and Y
-	wolfX += (rand() % 31 - 15);
-	wolfY += (rand() % 31 - 15);
+		wolfX += (rand() % 31 - 15);
+		wolfY += (rand() % 31 - 15);
 
-	// BOUNDARY CHECKING: Prevent the wolf from walking off the screen or over the UI
-	// Right and Left bounds
-	if (wolfX < 0) wolfX = 0;
-	if (wolfX > config.windWidth - 140) wolfX = config.windWidth - 140;
+		// BOUNDARY CHECKING: Prevent the wolf from walking off the screen or over the UI
+		// Right and Left bounds
+		if (wolfX < 0) wolfX = 0;
+		if (wolfX > config.windWidth - 140) wolfX = config.windWidth - 140;
 
-	// Top and Bottom bounds (Respecting Toolbars and Status Bar)
-	if (wolfY < config.toolBarHeight * 2) wolfY = config.toolBarHeight * 2;
-	if (wolfY > config.windHeight - config.statusBarHeight - 140) wolfY = config.windHeight - config.statusBarHeight - 140;
+		// Top and Bottom bounds (Respecting Toolbars and Status Bar)
+		if (wolfY < config.toolBarHeight * 2) wolfY = config.toolBarHeight * 2;
+		if (wolfY > config.windHeight - config.statusBarHeight - 140) wolfY = config.windHeight - config.statusBarHeight - 140;
+
+		for (size_t i = 0; i < wolves.size(); i++)
+		{
+			wolves[i].x += (rand() % 31 - 15);
+			wolves[i].y += (rand() % 31 - 15);
+
+			if (wolves[i].x < 0) wolves[i].x = 0;
+			if (wolves[i].x > config.windWidth - 100) wolves[i].x = config.windWidth - 100;
+			if (wolves[i].y < config.toolBarHeight * 2) wolves[i].y = config.toolBarHeight * 2;
+			if (wolves[i].y > config.windHeight - config.statusBarHeight - 100) wolves[i].y = config.windHeight - config.statusBarHeight - 100;
+		}
 }
-
 void Game::drawFoodArea(const FoodArea& area) const
 {
 	if (area.counter <= 0)
@@ -341,10 +377,14 @@ void Game::Restart()
 {
 	cout << "Restart button clicked" << endl;
 	// 1. Reset budget
-	if (!isPaused()) {
 		budget = 5000;
 		animalcount = 0;
-		level = 1;               // Resets the level back to 1
+		mainWolfVisible = true;
+		consecutiveWolfClicks = 0;
+		goalTarget = level * 5;
+		goalProgress = 0;
+		statusMessage = "";
+		statusMessageTimer = 0;
 		gametimer(level);		 // Resets the timer based on the level
 		eggCount = 0;
 		milkCount = 0;
@@ -378,15 +418,14 @@ void Game::Restart()
 		updatestatusbar();
 		printBudget("BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | water: $50 ");
 		printMessage("Game restarted.");
-	}
+
 }
 
 void Game::printMessage(string msg) const
 {
-	clearStatusBar();	//First clear the status bar
-	pWind->SetPen(config.penColor, 50);
-	pWind->SetFont(24, BOLD, BY_NAME, "Arial");
-	pWind->DrawString(10, config.windHeight - (int)(0.85 * config.statusBarHeight), msg);
+	statusMessage = msg;
+	statusMessageTimer = 25;
+	updatestatusbar();
 }
 
 window* Game::getWind() const
@@ -554,7 +593,9 @@ void Game::collectEggs()
 {
 	if (eggCount > 0) {
 		warehouseEggCount += eggCount;
+		goalProgress += eggCount;
 		eggCount = 0; // Remove from the icon bar
+		checkLevelGoal(); //hecks for a level up right after eggs are moved into the warehouse
 		updatestatusbar(); // Refresh UI if necessary
 	}
 }
@@ -563,9 +604,174 @@ void Game::collectMilk()
 {
 	if (milkCount > 0) {
 		warehouseMilkCount += milkCount;
+		goalProgress += milkCount;
 		milkCount = 0; // Remove from the icon bar
+		checkLevelGoal(); //checks for a level-up right after milk is moved into the warehouse
 		updatestatusbar(); // Refresh UI if necessary
 	}
+}
+
+bool Game::isPointInsidePrimaryWolf(int x, int y) const //tests wolf click bounds
+{
+	return mainWolfVisible && //requires the wolf to be visible before it can be clicked
+		x >= wolfX && x <= wolfX + 140 && // checks the click’s horizontal range against the wolf image
+		y >= wolfY && y <= wolfY + 140; //checks the click’s vertical range against the wolf image
+}
+
+bool Game::isPointInsideExtraWolf(int index, int x, int y) const
+{
+	if (index < 0 || index >= static_cast<int>(wolves.size()))
+		return false;
+
+	return x >= wolves[index].x && x <= wolves[index].x + 100 &&
+		y >= wolves[index].y && y <= wolves[index].y + 100;
+}
+
+bool Game::isPointInsideWarehouse(int x, int y) const // tests warehouse click bounds
+{
+	return x >= 900 && x <= 1120 && //checks the warehouse X range
+		y >= 315 && y <= 495; //checks the warehouse Y range
+}
+
+void Game::showWarehouseWindow() const //starts the function that opens a new warehouse window
+{
+	window* warehouseWindow = new window(430, 240, config.wx + 120, config.wy + 120); //creates a separate graphics window
+	warehouseWindow->SetWaitClose(false); // prevents the library from waiting on close in its default way
+	warehouseWindow->SetBuffering(true);
+	warehouseWindow->ChangeTitle("Warehouse Details"); //sets the popup title text
+	warehouseWindow->SetPen(WHITE, 1);
+	warehouseWindow->SetBrush(WHITE);
+	warehouseWindow->DrawRectangle(0, 0, 430, 240);
+	warehouseWindow->SetPen(BLACK);
+	warehouseWindow->SetFont(22, BOLD, BY_NAME, "Arial");
+	warehouseWindow->DrawString(20, 20, "Warehouse Summary");
+	warehouseWindow->SetFont(18, BOLD, BY_NAME, "Arial");
+	warehouseWindow->DrawString(20, 70, "Eggs stored: " + to_string(warehouseEggCount));
+	warehouseWindow->DrawString(20, 105, "Milk stored: " + to_string(warehouseMilkCount));
+	warehouseWindow->DrawString(20, 140, "Egg price: $" + to_string(eggPrice));
+	warehouseWindow->DrawString(20, 175, "Milk price: $" + to_string(milkPrice));
+	warehouseWindow->DrawString(20, 205, "Click anywhere in this window to close.");
+	warehouseWindow->UpdateBuffer();
+
+	int popupX = 0;
+	int popupY = 0;
+	warehouseWindow->WaitMouseClick(popupX, popupY);
+	delete warehouseWindow;
+}
+
+void Game::advanceLevel() // starts the level up function
+{
+	level++;
+	gametimer(level); //recalculates the timer for the new level
+	goalProgress = 0; //resets the current level goal progress
+	goalTarget += 5; //increases the next goal target after leveling up
+	mainWolfVisible = true; //makes the main wolf visible again for the new level
+	consecutiveWolfClicks = 0;//resets the wolf click combo counter
+	spawnWolves();
+	redrawField();
+	printMessage("Level increased to " + to_string(level) + "."); // shows a status-bar message telling the player they leveled up
+}
+
+void Game::checkLevelGoal() //goal check function
+
+{
+	while (goalProgress >= goalTarget)
+		advanceLevel();
+}
+
+void Game::resetWolfHitCounters(int clickedWolfIndex)
+{
+	if (clickedWolfIndex == -1)
+	{
+		for (size_t i = 0; i < wolfHitCounts.size(); i++)
+			wolfHitCounts[i] = 0;
+		return;
+	}
+
+	consecutiveWolfClicks = 0;
+
+	for (size_t i = 0; i < wolfHitCounts.size(); i++)
+	{
+		if (static_cast<int>(i) != clickedWolfIndex)
+			wolfHitCounts[i] = 0;
+	}
+}
+
+void Game::updateStatusMessageTimer()
+{
+	if (statusMessageTimer > 0)
+	{
+		statusMessageTimer--;
+		if (statusMessageTimer == 0)
+			statusMessage.clear();
+	}
+}
+
+void Game::handlePlayAreaClick(int x, int y) 
+{
+	if (x >= 610 && x <= 700 && y >= 130 && y <= 250) //checks whether the egg icon area was clicked
+	{
+		collectEggs(); //moves eggs into the warehouse if the egg area was clicked
+		return;
+	}
+
+	if (x >= 720 && x <= 810 && y >= 130 && y <= 250)
+	{
+		collectMilk();
+		return;
+	}
+
+	if (isPointInsideWarehouse(x, y)) //checks whether the warehouse itself was clicked
+	{
+		consecutiveWolfClicks = 0;//resets the wolf combo because the click was not on the wolf
+		resetWolfHitCounters(-2);
+		showWarehouseWindow();//opens the popup warehouse window
+		return;
+	}
+
+	if (isPointInsidePrimaryWolf(x, y)) //checks whether the main wolf was clicked
+	{
+		resetWolfHitCounters(-1);
+		consecutiveWolfClicks++;
+
+		if (consecutiveWolfClicks >= 5)
+		{
+			mainWolfVisible = false;
+			consecutiveWolfClicks = 0;
+			printMessage("The wolf disappeared.");
+		}
+		else
+		{
+			printMessage("Wolf hits: " + to_string(consecutiveWolfClicks) + "/5");
+		}
+
+		return;
+	}
+
+	for (size_t i = 0; i < wolves.size(); i++)
+	{
+		if (isPointInsideExtraWolf(static_cast<int>(i), x, y))
+		{
+			resetWolfHitCounters(static_cast<int>(i));
+			wolfHitCounts[i]++;
+
+			if (wolfHitCounts[i] >= 5)
+			{
+				wolves.erase(wolves.begin() + i);
+				wolfHitCounts.erase(wolfHitCounts.begin() + i);
+				printMessage("A wolf disappeared.");
+			}
+			else
+			{
+				printMessage("Wolf hits: " + to_string(wolfHitCounts[i]) + "/5");
+			}
+
+			return;
+		}
+	}
+
+	consecutiveWolfClicks = 0;
+	resetWolfHitCounters(-2);
 }
 
 void Game::go()
@@ -575,7 +781,6 @@ void Game::go()
 	bool isExit = false;
 
 	//Change the title
-	pWind->ChangeTitle("- - - - - - - - - - Farm Frenzy (CIE101-project) - - - - - - - - - -");
 	pWind->SetBuffering(true);
 	pWind->UpdateBuffer();
 	pWind->ChangeTitle("Farm Frenzy");
@@ -586,6 +791,7 @@ void Game::go()
 
 	do
 	{
+		updateStatusMessageTimer();
 		auto currentTime = std::chrono::steady_clock::now();
 
 		// Check if 1 second has passed
@@ -620,8 +826,7 @@ void Game::go()
 		string budget_string_code = "BUDGET = $" + to_string(budget);
 		string budget_string = "BUDGET: $" + to_string(budget);
 		string prices = " | Chick: $100 | Cow: $200 | water: $50 ";
-		//printBudget("BUDGET = $1000");
-		printBudget(budget_string + prices);
+		printBudget(budget_string + prices); //printBudget bar
 
 		gameToolbar->draw();
 		gameBudgetbar->draw();
@@ -654,16 +859,7 @@ void Game::go()
 		}
 		else if (click == LEFT_CLICK && y >= 2 * config.toolBarHeight)
 		{
-			// Check Egg Icon bounds (from drawEggsAndMilk: X: 610-700, Y: 130-250)
-			if (x >= 610 && x <= 700 && y >= 130 && y <= 250)
-			{
-				collectEggs();
-			}
-			// Check Milk Icon bounds (from drawEggsAndMilk: X: 720-810, Y: 130-250)
-			else if (x >= 720 && x <= 810 && y >= 130 && y <= 250)
-			{
-				collectMilk();
-			}
+			handlePlayAreaClick(x, y);
 		}
 		//}
 
@@ -683,8 +879,9 @@ void Game::updatePlayArea()
 
 		bool isEaten = false;
 
-		// A. Check collision with the primary moving wolf
-		if (p.x < wolfX + 140 && p.x + w > wolfX &&
+		// makes collision with the main wolf happen only while that wolf is visible
+		if (mainWolfVisible &&
+			p.x < wolfX + 140 && p.x + w > wolfX &&
 			p.y < wolfY + 140 && p.y + h > wolfY)
 		{
 			isEaten = true;
@@ -692,9 +889,9 @@ void Game::updatePlayArea()
 
 		// B. Check collision with any multiplied/cloned wolves
 		if (!isEaten) {
-			for (size_t i = 1; i < wolves.size(); i++) {
-				if (p.x < wolves[i].x + 140 && p.x + w > wolves[i].x &&
-					p.y < wolves[i].y + 140 && p.y + h > wolves[i].y)
+			for (size_t i = 0; i < wolves.size(); i++) {
+				if (p.x < wolves[i].x + 100 && p.x + w > wolves[i].x &&
+					p.y < wolves[i].y + 100 && p.y + h > wolves[i].y)
 				{
 					isEaten = true;
 					break; // Stop checking other wolves if already eaten
