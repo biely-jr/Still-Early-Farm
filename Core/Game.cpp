@@ -214,7 +214,7 @@ void Game::drawFieldBackground() const
 
 void Game::spawnWolves()
 {
-	wolves.clear(); 
+	wolves.clear();
 	wolfHitCounts.clear(); //When new wolves are spawned, it clears the old hit counters too, so the vector stays in sync with the wolves vector
 
 	int wolvesToSpawn = 1 + (level / 2);
@@ -270,28 +270,28 @@ void Game::moveWolf()
 	}
 
 	// Generates a random number between -15 and +15 to shift X and Y
-		wolfX += (rand() % 31 - 15);
-		wolfY += (rand() % 31 - 15);
+	wolfX += (rand() % 31 - 15);
+	wolfY += (rand() % 31 - 15);
 
-		// BOUNDARY CHECKING: Prevent the wolf from walking off the screen or over the UI
-		// Right and Left bounds
-		if (wolfX < 0) wolfX = 0;
-		if (wolfX > config.windWidth - 140) wolfX = config.windWidth - 140;
+	// BOUNDARY CHECKING: Prevent the wolf from walking off the screen or over the UI
+	// Right and Left bounds
+	if (wolfX < 0) wolfX = 0;
+	if (wolfX > config.windWidth - 140) wolfX = config.windWidth - 140;
 
-		// Top and Bottom bounds (Respecting Toolbars and Status Bar)
-		if (wolfY < config.toolBarHeight * 2) wolfY = config.toolBarHeight * 2;
-		if (wolfY > config.windHeight - config.statusBarHeight - 140) wolfY = config.windHeight - config.statusBarHeight - 140;
+	// Top and Bottom bounds (Respecting Toolbars and Status Bar)
+	if (wolfY < config.toolBarHeight * 2) wolfY = config.toolBarHeight * 2;
+	if (wolfY > config.windHeight - config.statusBarHeight - 140) wolfY = config.windHeight - config.statusBarHeight - 140;
 
-		for (size_t i = 0; i < wolves.size(); i++)
-		{
-			wolves[i].x += (rand() % 31 - 15);
-			wolves[i].y += (rand() % 31 - 15);
+	for (size_t i = 0; i < wolves.size(); i++)
+	{
+		wolves[i].x += (rand() % 31 - 15);
+		wolves[i].y += (rand() % 31 - 15);
 
-			if (wolves[i].x < 0) wolves[i].x = 0;
-			if (wolves[i].x > config.windWidth - 100) wolves[i].x = config.windWidth - 100;
-			if (wolves[i].y < config.toolBarHeight * 2) wolves[i].y = config.toolBarHeight * 2;
-			if (wolves[i].y > config.windHeight - config.statusBarHeight - 100) wolves[i].y = config.windHeight - config.statusBarHeight - 100;
-		}
+		if (wolves[i].x < 0) wolves[i].x = 0;
+		if (wolves[i].x > config.windWidth - 100) wolves[i].x = config.windWidth - 100;
+		if (wolves[i].y < config.toolBarHeight * 2) wolves[i].y = config.toolBarHeight * 2;
+		if (wolves[i].y > config.windHeight - config.statusBarHeight - 100) wolves[i].y = config.windHeight - config.statusBarHeight - 100;
+	}
 }
 void Game::drawFoodArea(const FoodArea& area) const
 {
@@ -377,47 +377,47 @@ void Game::Restart()
 {
 	cout << "Restart button clicked" << endl;
 	// 1. Reset budget
-		budget = 5000;
-		animalcount = 0;
-		mainWolfVisible = true;
-		consecutiveWolfClicks = 0;
-		goalTarget = level * 5;
-		goalProgress = 0;
-		statusMessage = "";
-		statusMessageTimer = 0;
-		gametimer(level);		 // Resets the timer based on the level
-		eggCount = 0;
-		milkCount = 0;
-		warehouseEggCount = 0;
-		warehouseMilkCount = 0;
+	budget = 5000;
+	animalcount = 0;
+	mainWolfVisible = true;
+	consecutiveWolfClicks = 0;
+	goalTarget = level * 5;
+	goalProgress = 0;
+	statusMessage = "";
+	statusMessageTimer = 0;
+	gametimer(level);		 // Resets the timer based on the level
+	eggCount = 0;
+	milkCount = 0;
+	warehouseEggCount = 0;
+	warehouseMilkCount = 0;
 
-		for (Animal* animal : animals)
-			delete animal;
-		animals.clear();
+	for (Animal* animal : animals)
+		delete animal;
+	animals.clear();
 
-		// 2. Clear the entire window, basically erases the set window and makes a new one
-		// How it works : it is used in drawing a giant rectangle that covers the initial gameplay
-		pWind->SetPen(config.bkGrndColor, 1);
-		pWind->SetBrush(config.bkGrndColor);
-		pWind->DrawRectangle(0, 0, config.windWidth, config.windHeight);
+	// 2. Clear the entire window, basically erases the set window and makes a new one
+	// How it works : it is used in drawing a giant rectangle that covers the initial gameplay
+	pWind->SetPen(config.bkGrndColor, 1);
+	pWind->SetBrush(config.bkGrndColor);
+	pWind->DrawRectangle(0, 0, config.windWidth, config.windHeight);
 
-		// 3. Delete old UI elements, deletes their pointers to prevent memory leaks
-		delete gameToolbar;
-		delete gameBudgetbar;
+	// 3. Delete old UI elements, deletes their pointers to prevent memory leaks
+	delete gameToolbar;
+	delete gameBudgetbar;
 
-		// 4. Recreate UI (toolbar + budget bar)
-		createToolbar();
-		createBudgetbar();
+	// 4. Recreate UI (toolbar + budget bar)
+	createToolbar();
+	createBudgetbar();
 
-		// 5. Clear status bar
-		clearStatusBar();
+	// 5. Clear status bar
+	clearStatusBar();
 
-		initializeFoodAreas();
-		spawnWolves();
-		redrawField();
-		updatestatusbar();
-		printBudget("BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | water: $50 ");
-		printMessage("Game restarted.");
+	initializeFoodAreas();
+	spawnWolves();
+	redrawField();
+	updatestatusbar();
+	printBudget("BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | water: $50 ");
+	printMessage("Game restarted.");
 
 }
 
@@ -707,7 +707,7 @@ void Game::updateStatusMessageTimer()
 	}
 }
 
-void Game::handlePlayAreaClick(int x, int y) 
+void Game::handlePlayAreaClick(int x, int y)
 {
 	if (x >= 610 && x <= 700 && y >= 130 && y <= 250) //checks whether the egg icon area was clicked
 	{
@@ -800,6 +800,11 @@ void Game::go()
 			if (time > 0) {
 				time--; // Decrease timer
 			}
+
+			if (time <= 0) {
+				paused = true; // Stop the game when time runs out
+			}
+
 			lastTime = currentTime; // Reset the clock tracker
 		}
 		else if (paused)
@@ -837,8 +842,10 @@ void Game::go()
 
 		if (!paused)
 			updatePlayArea();
-		else if (paused)
-			printMessage("Game paused");
+		else if (paused && time > 0)
+			printMessage("Game paused"); // Only say paused if there is still time left
+		else if (time <= 0)
+			printMessage("Game Over");   // Say Game Over if time has run out
 		else
 			redrawField();
 
