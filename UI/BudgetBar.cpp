@@ -66,36 +66,7 @@ WaterIcon::WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, st
 // The randomized coordinates (X,Y) are calculated and stored through this function implementation
 void WaterIcon::onClick()
 {
-	if (pGame->isPaused())
-	{
-		pGame->printMessage("Resume the game before watering.");
-		return;
-	}
-
-	if (pGame->budget >= 50)   // Price set to 50
-	{
-		pGame->budget -= 50;
-
-		pGame->clearBudget();
-		string budget_string = "BUDGET = $" + to_string(pGame->budget);
-		pGame->printBudget(budget_string);
-
-		point p;
-		std::random_device rd;
-		std::mt19937 gen(rd());
-
-		std::uniform_int_distribution<int> dist1(range_min_x, range_max_x);
-		p.x = dist1(gen); // Gets a random X and Y coordinate
-
-		std::uniform_int_distribution<int> dist2(range_min_y, range_max_y);
-		p.y = dist2(gen);
-
-		if (count < 50)
-		{
-			grassList[count] = p;
-			count++;
-		}
-	}
+	pGame->placeFoodArea();
 }
 
 Budgetbar::Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height) : Drawable(r_pGame, r_point, r_width, r_height)
@@ -191,13 +162,6 @@ void WaterIcon::draw() const
 
 void WaterIcon::moveAnimals()
 {
-	// Responsible for showing the grass patch on the main window
-	window* pWind = pGame->getWind();
-	for (int i = 0; i < count; i++) {
-		pWind->SetPen(GREEN, 1);
-		pWind->SetBrush(GREEN);
-		pWind->DrawRectangle(grassList[i].x, grassList[i].y, grassList[i].x + 50, grassList[i].y + 50);
-	}
 }
 
 void Budgetbar::moveAllAnimals()
