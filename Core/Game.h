@@ -51,13 +51,15 @@ private:
 	void drawWolf() const;
 	void drawFoodArea(const FoodArea& area) const;
 	void drawAllFoodAreas() const;
-	void drawEggsAndMilk() const;
 	void drawWarehouse() const;
 	point getRandomAnimalPosition(int animalWidth, int animalHeight) const;
-	void consumeFoodArea(int areaIndex);
+	point getRandomFoodAreaPosition() const;
+	bool isAnimalStandingOnFood(const Animal* animal) const;
 	bool isPointInsidePrimaryWolf(int x, int y) const; //checks whether a click landed on the main wolf.
 	bool isPointInsideExtraWolf(int index, int x, int y) const; //checks whether the player clicked one of the extra wolves
 	bool isPointInsideWarehouse(int x, int y) const; //checks whether a click landed on the warehouse.
+	bool isPointInsideEggSellButton(int x, int y) const;
+	bool isPointInsideMilkSellButton(int x, int y) const;
 	void showWarehouseWindow() const;//window for warehouse details.
 	void handlePlayAreaClick(int x, int y);
 	void checkLevelGoal();// checks whether the goal has been reached.
@@ -107,10 +109,13 @@ public:
 	bool canAfford(int amount) const;
 	bool spendBudget(int amount);
 	void placeAnimal(AnimalType animalType);
+	void placeFoodArea();
 	void pauseGame();
 	void resumeGame();
 	void saveGame();
 	void loadGame();
+	void sellEggProducts();
+	void sellMilkProducts();
 	bool isPaused() const;
 	void registerAnimalProduct(const string& productLabel);
 
