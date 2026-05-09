@@ -217,7 +217,7 @@ void Game::spawnWolves()
 	wolves.clear();
 	wolfHitCounts.clear(); //When new wolves are spawned, it clears the old hit counters too, so the vector stays in sync with the wolves vector
 
-	int wolvesToSpawn = 1 + (level / 2);
+	int wolvesToSpawn = 1 + level;
 	int minX = 50;
 	int maxX = config.windWidth - 140 - 50;
 
@@ -254,43 +254,34 @@ void Game::drawWolf() const
 
 void Game::moveWolf()
 {
-	if (!mainWolfVisible)
-	{
-		for (size_t i = 0; i < wolves.size(); i++)
-		{
-			wolves[i].x += (rand() % 31 - 15);
-			wolves[i].y += (rand() % 31 - 15);
+	// CALCULATE VELOCITY: Base speed of 15, increases by 5 per level
+	int velocity = 15 + (level * 5);
+	int offset = (velocity * 2) + 1;
 
-			if (wolves[i].x < 0) wolves[i].x = 0;
-			if (wolves[i].x > config.windWidth - 100) wolves[i].x = config.windWidth - 100;
-			if (wolves[i].y < config.toolBarHeight * 2) wolves[i].y = config.toolBarHeight * 2;
-			if (wolves[i].y > config.windHeight - config.statusBarHeight - 100) wolves[i].y = config.windHeight - config.statusBarHeight - 100;
-		}
-		return;
-	}
-
-	// Generates a random number between -15 and +15 to shift X and Y
-	wolfX += (rand() % 31 - 15);
-	wolfY += (rand() % 31 - 15);
-
-	// BOUNDARY CHECKING: Prevent the wolf from walking off the screen or over the UI
-	// Right and Left bounds
-	if (wolfX < 0) wolfX = 0;
-	if (wolfX > config.windWidth - 140) wolfX = config.windWidth - 140;
-
-	// Top and Bottom bounds (Respecting Toolbars and Status Bar)
-	if (wolfY < config.toolBarHeight * 2) wolfY = config.toolBarHeight * 2;
-	if (wolfY > config.windHeight - config.statusBarHeight - 140) wolfY = config.windHeight - config.statusBarHeight - 140;
-
+	// 1. Move extra spawned wolves
 	for (size_t i = 0; i < wolves.size(); i++)
 	{
-		wolves[i].x += (rand() % 31 - 15);
-		wolves[i].y += (rand() % 31 - 15);
+		wolves[i].x += (rand() % offset - velocity);
+		wolves[i].y += (rand() % offset - velocity);
 
+		// Boundary checks for extra wolves
 		if (wolves[i].x < 0) wolves[i].x = 0;
 		if (wolves[i].x > config.windWidth - 100) wolves[i].x = config.windWidth - 100;
 		if (wolves[i].y < config.toolBarHeight * 2) wolves[i].y = config.toolBarHeight * 2;
 		if (wolves[i].y > config.windHeight - config.statusBarHeight - 100) wolves[i].y = config.windHeight - config.statusBarHeight - 100;
+	}
+
+	// 2. Move primary wolf if visible
+	if (mainWolfVisible)
+	{
+		wolfX += (rand() % offset - velocity);
+		wolfY += (rand() % offset - velocity);
+
+		// Boundary checks for primary wolf
+		if (wolfX < 0) wolfX = 0;
+		if (wolfX > config.windWidth - 140) wolfX = config.windWidth - 140;
+		if (wolfY < config.toolBarHeight * 2) wolfY = config.toolBarHeight * 2;
+		if (wolfY > config.windHeight - config.statusBarHeight - 140) wolfY = config.windHeight - config.statusBarHeight - 140;
 	}
 }
 void Game::drawFoodArea(const FoodArea& area) const
