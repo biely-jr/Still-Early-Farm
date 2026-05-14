@@ -49,7 +49,7 @@ private:
 	void clearPlayingArea() const;
 	void drawFieldBackground() const;
 	void drawWolf() const;
-	void drawFoodArea(const FoodArea& area) const;
+	void drawFoodArea(const FoodArea& area) const ;
 	void drawAllFoodAreas() const;
 	void drawWarehouse() const;
 	point getRandomAnimalPosition(int animalWidth, int animalHeight) const;
@@ -60,7 +60,7 @@ private:
 	bool isPointInsideWarehouse(int x, int y) const; //checks whether a click landed on the warehouse.
 	bool isPointInsideEggSellButton(int x, int y) const;
 	bool isPointInsideMilkSellButton(int x, int y) const;
-	void showWarehouseWindow() const;//window for warehouse details.
+	void showWarehouseWindow() ;//window for warehouse details.
 	void handlePlayAreaClick(int x, int y);
 	void checkLevelGoal();// checks whether the goal has been reached.
 	void advanceLevel(); //increases the level and refreshes level-related state.
@@ -122,3 +122,4 @@ public:
 
 	window* getWind() const;		//returns a pointer to the graphics window
 };
+
