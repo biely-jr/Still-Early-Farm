@@ -172,6 +172,8 @@ class window {
     int GetHeight() const;
     void GetWindowSize(int &iX, int &iY) const;
 
+    bool IsOpen() const;
+
     // Get information on the current state of the mouse buttons and it's position
     buttonstate GetButtonState(const button btMouse, int &iX, int &iY);
  
