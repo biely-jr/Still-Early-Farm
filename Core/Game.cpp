@@ -33,7 +33,9 @@ Game::Game()
 	warehouseMilkCount(0),
 	goalTarget(500),
 	goalProgress(0),
-	mainWolfVisible(true),
+	mainWolfVisible(false),
+	wolvesSpawned(false),
+	wolfSpawnCountdown(10),
 	consecutiveWolfClicks(0),
 	statusMessage(""),
 	statusMessageTimer(0)
@@ -64,7 +66,7 @@ Game::Game()
 	updatestatusbar();
 	drawfieldboundary();
 	clearStatusBar();
-	spawnWolves();
+	//spawnWolves();
 	clearStatusBar();
 	initializeFoodAreas();
 	redrawField();
@@ -217,7 +219,6 @@ void Game::drawFieldBackground() const
 	pWind->DrawLine(0, playTop + 140, config.windWidth, playTop + 140);
 }
 
-
 void Game::spawnWolves()
 {
 	wolves.clear();
@@ -232,8 +233,16 @@ void Game::spawnWolves()
 
 	for (int i = 0; i < wolvesToSpawn; i++)
 	{
-		int randX = minX + (rand() % (maxX - minX));
-		int randY = minY + (rand() % (maxY - minY));
+		int randX, randY;
+		bool safe = false;
+
+		// Keep trying new positions until a safe one is found
+		while (!safe)
+		{
+			randX = minX + (rand() % (maxX - minX));
+			randY = minY + (rand() % (maxY - minY));
+			safe = !isAreaOccupiedByAnimal(randX, randY, 100, 100);
+		}
 
 		point wolfPosition;
 		wolfPosition.x = randX;
@@ -245,22 +254,39 @@ void Game::spawnWolves()
 	updatestatusbar();
 }
 
+bool Game::isAreaOccupiedByAnimal(int x, int y, int width, int height) const
+{
+	for (Animal* animal : animals)
+	{
+		point p = animal->getRefPoint();
+		int w = animal->getWidth();
+		int h = animal->getHeight();
+
+		// Check if the wolf's rectangle overlaps with the animal's rectangle
+		if (x < p.x + w && x + width > p.x &&
+			y < p.y + h && y + height > p.y)
+		{
+			return true; // Collision found
+		}
+	}
+	return false; // Area is clear
+}
+
 void Game::drawWolf() const
 {
 	// 1. Draw primary moving wolf
 	if (mainWolfVisible)
-		pWind->DrawImage(Game::wolfImagePath, wolfX, wolfY, 140, 140);
+		pWind->DrawImage(Game::wolfImagePath, wolfX, wolfY, 80, 80);
 
 	// 2. Draw every spawned wolf from the vector
 	for (size_t i = 0; i < wolves.size(); i++)
 	{
-		pWind->DrawImage(::wolfImagePath, wolves[i].x, wolves[i].y, 100, 100);
+		pWind->DrawImage(::wolfImagePath, wolves[i].x, wolves[i].y, 70, 70);
 	}
 }
 
 void Game::moveWolf()
 {
-	// CALCULATE VELOCITY: Base speed of 15, increases by 5 per level
 	int velocity = 15 + (level * 5);
 	int offset = (velocity * 2) + 1;
 
@@ -272,9 +298,9 @@ void Game::moveWolf()
 
 		// Boundary checks for extra wolves
 		if (wolves[i].x < 0) wolves[i].x = 0;
-		if (wolves[i].x > config.windWidth - 100) wolves[i].x = config.windWidth - 100;
+		if (wolves[i].x > config.windWidth - 70) wolves[i].x = config.windWidth - 70;
 		if (wolves[i].y < config.toolBarHeight * 2) wolves[i].y = config.toolBarHeight * 2;
-		if (wolves[i].y > config.windHeight - config.statusBarHeight - 100) wolves[i].y = config.windHeight - config.statusBarHeight - 100;
+		if (wolves[i].y > config.windHeight - config.statusBarHeight - 70) wolves[i].y = config.windHeight - config.statusBarHeight - 70;
 	}
 
 	// 2. Move primary wolf if visible
@@ -285,9 +311,9 @@ void Game::moveWolf()
 
 		// Boundary checks for primary wolf
 		if (wolfX < 0) wolfX = 0;
-		if (wolfX > config.windWidth - 140) wolfX = config.windWidth - 140;
+		if (wolfX > config.windWidth - 80) wolfX = config.windWidth - 80;
 		if (wolfY < config.toolBarHeight * 2) wolfY = config.toolBarHeight * 2;
-		if (wolfY > config.windHeight - config.statusBarHeight - 140) wolfY = config.windHeight - config.statusBarHeight - 140;
+		if (wolfY > config.windHeight - config.statusBarHeight - 80) wolfY = config.windHeight - config.statusBarHeight - 80;
 	}
 }
 void Game::drawFoodArea(const FoodArea& area) const
@@ -393,11 +419,24 @@ void Game::Restart()
 {
 	cout << "Restart button clicked" << endl;
 	// 1. Reset budget
-	budget = 5000;
+	paused = false; //Prevents pausing when restarting from a "Game Over"
+	budget = 2500;
 	animalcount = 0;
-	mainWolfVisible = true;
+
+	mainWolfVisible = false;
+	wolves.clear();
 	consecutiveWolfClicks = 0;
-	goalTarget = level * 5;
+	wolvesSpawned = false;
+	wolfSpawnCountdown = 10;
+
+	if (level == 1)
+		goalTarget = 500;
+	else {
+		for (int i = 1; i < level; i++)
+		{
+			goalTarget += 700;
+		}
+	}
 	goalProgress = 0;
 	statusMessage = "";
 	statusMessageTimer = 0;
@@ -429,7 +468,7 @@ void Game::Restart()
 	clearStatusBar();
 
 	initializeFoodAreas();
-	spawnWolves();
+	//spawnWolves();
 	redrawField();
 	updatestatusbar();
 	printBudget("BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | water: $50 ");
@@ -452,9 +491,9 @@ window* Game::getWind() const
 void Game::gametimer(int level)
 {
 	time = 150 - (level - 1) * 10;
-	if (time <= 60)
+	if (time <= 90)
 	{
-		time = 60;
+		time = 90;
 	}
 }
 
@@ -692,8 +731,8 @@ void Game::collectMilk()
 bool Game::isPointInsidePrimaryWolf(int x, int y) const //tests wolf click bounds
 {
 	return mainWolfVisible && //requires the wolf to be visible before it can be clicked
-		x >= wolfX && x <= wolfX + 140 && // checks the click’s horizontal range against the wolf image
-		y >= wolfY && y <= wolfY + 140; //checks the click’s vertical range against the wolf image
+		x >= wolfX && x <= wolfX + 80 && // checks the click’s horizontal range against the wolf image
+		y >= wolfY && y <= wolfY + 80; //checks the click’s vertical range against the wolf image
 }
 
 bool Game::isPointInsideExtraWolf(int index, int x, int y) const
@@ -701,8 +740,8 @@ bool Game::isPointInsideExtraWolf(int index, int x, int y) const
 	if (index < 0 || index >= static_cast<int>(wolves.size()))
 		return false;
 
-	return x >= wolves[index].x && x <= wolves[index].x + 100 &&
-		y >= wolves[index].y && y <= wolves[index].y + 100;
+	return x >= wolves[index].x && x <= wolves[index].x + 80 &&
+		y >= wolves[index].y && y <= wolves[index].y + 80;
 }
 
 bool Game::isPointInsideWarehouse(int x, int y) const
@@ -782,9 +821,14 @@ void Game::advanceLevel() // starts the level up function
 	gametimer(level); //recalculates the timer for the new level
 	goalProgress = 0; //resets the current level goal progress
 	goalTarget += 700; //increases the next goal target after leveling up
-	mainWolfVisible = true; //makes the main wolf visible again for the new level
+	
+	mainWolfVisible = false; //makes the main wolf visible again for the new level
+	wolvesSpawned = false;
+	wolfSpawnCountdown = 10;
 	consecutiveWolfClicks = 0;//resets the wolf click combo counter
-	spawnWolves();
+	wolves.clear();
+
+	//spawnWolves();
 	redrawField();
 	printMessage("Level increased to " + to_string(level) + "."); // shows a status-bar message telling the player they leveled up
 }
@@ -918,6 +962,27 @@ void Game::go()
 				time--; // Decrease timer
 			}
 
+			if (!wolvesSpawned) {
+				if (wolfSpawnCountdown > 0) {
+					wolfSpawnCountdown--;
+				} // Holds the first 10 seconds of gameplay
+
+				else {
+					wolvesSpawned = true;
+					bool safe = false;
+					while (!safe) 
+					{
+						wolfX = 50 + (rand() % (config.windWidth - 80 - 100));
+						wolfY = (2 * config.toolBarHeight + 20) + (rand() % (config.windHeight - config.statusBarHeight - 80 - 40));
+						// Main wolf uses a size of 80x80
+						safe = !isAreaOccupiedByAnimal(wolfX, wolfY, 80, 80);
+					}
+					mainWolfVisible = true;
+					spawnWolves();
+					printMessage("Watch out! The wolves have arrived!");
+				}
+			}
+
 			if (time <= 0) {
 				paused = true; // Stop the game when time runs out
 			}
@@ -1005,8 +1070,8 @@ void Game::updatePlayArea()
 
 		// makes collision with the main wolf happen only while that wolf is visible
 		if (mainWolfVisible &&
-			p.x < wolfX + 140 && p.x + w > wolfX &&
-			p.y < wolfY + 140 && p.y + h > wolfY)
+			p.x < wolfX + 80 && p.x + w > wolfX &&
+			p.y < wolfY + 80 && p.y + h > wolfY)
 		{
 			isEaten = true;
 		}
@@ -1014,8 +1079,8 @@ void Game::updatePlayArea()
 		// B. Check collision with any multiplied/cloned wolves
 		if (!isEaten) {
 			for (size_t i = 0; i < wolves.size(); i++) {
-				if (p.x < wolves[i].x + 100 && p.x + w > wolves[i].x &&
-					p.y < wolves[i].y + 100 && p.y + h > wolves[i].y)
+				if (p.x < wolves[i].x + 80 && p.x + w > wolves[i].x &&
+					p.y < wolves[i].y + 80 && p.y + h > wolves[i].y)
 				{
 					isEaten = true;
 					break; // Stop checking other wolves if already eaten
@@ -1088,6 +1153,3 @@ void Game::updatePlayArea()
 
 	drawWarehouse();
 }
-
-
-
