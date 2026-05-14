@@ -15,7 +15,6 @@ namespace
 	const string eggImagePath = "images\\Egg.jpg";
 	const string milkImagePath = "images\\Milk.jpg";
 	const string warehouseImagePath = "images\\warehouse.jpg";
-	const string sellImagePath = "images\\Sell.jpg";
 	const int eggPrice = 25;
 	const int milkPrice = 50;
 	const int sellButtonLeft = 1375;
@@ -32,7 +31,7 @@ Game::Game()
 	milkCount(0),
 	warehouseEggCount(0),
 	warehouseMilkCount(0),
-	goalTarget(5),
+	goalTarget(500),
 	goalProgress(0),
 	mainWolfVisible(true),
 	consecutiveWolfClicks(0),
@@ -312,7 +311,7 @@ void Game::drawAllFoodAreas() const
 
 void Game::drawWarehouse() const
 {
-	pWind->DrawImage(warehouseImagePath, 900, 315, 220, 180);
+	pWind->DrawImage(warehouseImagePath, 1250, 550, 220, 180);
 
 	pWind->SetPen(BLACK, 2);
 	pWind->SetBrush(WHITE);
@@ -322,8 +321,13 @@ void Game::drawWarehouse() const
 	pWind->DrawString(1160, 355, "Eggs: " + to_string(warehouseEggCount) + "  $" + to_string(eggPrice));
 	pWind->DrawString(1160, 402, "Milk: " + to_string(warehouseMilkCount) + "  $" + to_string(milkPrice));
 
-	pWind->DrawImage(sellImagePath, sellButtonLeft, eggSellButtonTop, sellButtonRight - sellButtonLeft, eggSellButtonBottom - eggSellButtonTop);
-	pWind->DrawImage(sellImagePath, sellButtonLeft, milkSellButtonTop, sellButtonRight - sellButtonLeft, milkSellButtonBottom - milkSellButtonTop);
+	pWind->SetPen(DARKRED, 2);
+	pWind->SetBrush(WHITE);
+	pWind->DrawRectangle(sellButtonLeft, eggSellButtonTop, sellButtonRight, eggSellButtonBottom, FILLED, 8, 8);
+	pWind->DrawRectangle(sellButtonLeft, milkSellButtonTop, sellButtonRight, milkSellButtonBottom, FILLED, 8, 8);
+	pWind->SetFont(16, BOLD, BY_NAME, "Arial");
+	pWind->DrawString(sellButtonLeft + 18, eggSellButtonTop + 9, "SELL");
+	pWind->DrawString(sellButtonLeft + 18, milkSellButtonTop + 9, "SELL");
 }
 
 point Game::getRandomAnimalPosition(int animalWidth, int animalHeight) const
@@ -599,38 +603,42 @@ void Game::loadGame()
 
 void Game::sellEggProducts()
 {
-	const int earnings = warehouseEggCount * eggPrice;
+    int earnings = warehouseEggCount * eggPrice;
 
-	if (earnings <= 0)
-	{
-		printMessage("No eggs to sell.");
-		return;
-	}
+    if (earnings <= 0)
+    {
+        printMessage("No eggs to sell.");
+        return;
+    }
 
-	budget += earnings;
-	warehouseEggCount = 0;
+    budget += earnings;
+    goalProgress += earnings;
+    warehouseEggCount = 0;
+    checkLevelGoal();
 
-	redrawField();
-	printBudget("BUDGET = $" + to_string(budget));
-	printMessage("Eggs sold for $" + to_string(earnings) + ".");
+    redrawField();
+    printBudget("BUDGET = $" + to_string(budget));
+    printMessage("Eggs sold for $" + to_string(earnings) + ".");
 }
 
 void Game::sellMilkProducts()
 {
-	const int earnings = warehouseMilkCount * milkPrice;
+    int earnings = warehouseMilkCount * milkPrice;
 
-	if (earnings <= 0)
-	{
-		printMessage("No milk to sell.");
-		return;
-	}
+    if (earnings <= 0)
+    {
+        printMessage("No milk to sell.");
+        return;
+    }
 
-	budget += earnings;
-	warehouseMilkCount = 0;
+    budget += earnings;
+    goalProgress += earnings;
+    warehouseMilkCount = 0;
+    checkLevelGoal();
 
-	redrawField();
-	printBudget("BUDGET = $" + to_string(budget));
-	printMessage("Milk sold for $" + to_string(earnings) + ".");
+    redrawField();
+    printBudget("BUDGET = $" + to_string(budget));
+    printMessage("Milk sold for $" + to_string(earnings) + ".");
 }
 
 bool Game::isPaused() const
@@ -643,13 +651,11 @@ void Game::registerAnimalProduct(const string& productLabel)
 	if (productLabel == "Egg")
 	{
 		warehouseEggCount++;
-		goalProgress++;
 		checkLevelGoal();
 	}
 	else if (productLabel == "Milk")
 	{
 		warehouseMilkCount++;
-		goalProgress++;
 		checkLevelGoal();
 	}
 }
@@ -667,7 +673,6 @@ void Game::collectEggs()
 {
 	if (eggCount > 0) {
 		warehouseEggCount += eggCount;
-		goalProgress += eggCount;
 		eggCount = 0; // Remove from the icon bar
 		checkLevelGoal(); //hecks for a level up right after eggs are moved into the warehouse
 		updatestatusbar(); // Refresh UI if necessary
@@ -678,7 +683,6 @@ void Game::collectMilk()
 {
 	if (milkCount > 0) {
 		warehouseMilkCount += milkCount;
-		goalProgress += milkCount;
 		milkCount = 0; // Remove from the icon bar
 		checkLevelGoal(); //checks for a level-up right after milk is moved into the warehouse
 		updatestatusbar(); // Refresh UI if necessary
@@ -701,10 +705,10 @@ bool Game::isPointInsideExtraWolf(int index, int x, int y) const
 		y >= wolves[index].y && y <= wolves[index].y + 100;
 }
 
-bool Game::isPointInsideWarehouse(int x, int y) const // tests warehouse click bounds
+bool Game::isPointInsideWarehouse(int x, int y) const
 {
-	return x >= 900 && x <= 1120 && //checks the warehouse X range
-		y >= 315 && y <= 495; //checks the warehouse Y range
+	return (x >= 1250 && x <= 1470) && //Left = 1250, Right = 1250 + 220 = 1470
+		(y >= 550 && y <= 730); // Top = 550, Bottom = 550 + 180  = 730
 }
 
 bool Game::isPointInsideEggSellButton(int x, int y) const
@@ -719,30 +723,57 @@ bool Game::isPointInsideMilkSellButton(int x, int y) const
 		y >= milkSellButtonTop && y <= milkSellButtonBottom;
 }
 
-void Game::showWarehouseWindow() const //starts the function that opens a new warehouse window
+void Game::showWarehouseWindow() //starts the function that opens a new warehouse window
 {
-	window* warehouseWindow = new window(430, 240, config.wx + 120, config.wy + 120); //creates a separate graphics window
-	warehouseWindow->SetWaitClose(false); // prevents the library from waiting on close in its default way
-	warehouseWindow->SetBuffering(true);
-	warehouseWindow->ChangeTitle("Warehouse Details"); //sets the popup title text
-	warehouseWindow->SetPen(WHITE, 1);
-	warehouseWindow->SetBrush(WHITE);
-	warehouseWindow->DrawRectangle(0, 0, 430, 240);
-	warehouseWindow->SetPen(BLACK);
-	warehouseWindow->SetFont(22, BOLD, BY_NAME, "Arial");
-	warehouseWindow->DrawString(20, 20, "Warehouse Summary");
-	warehouseWindow->SetFont(18, BOLD, BY_NAME, "Arial");
-	warehouseWindow->DrawString(20, 70, "Eggs stored: " + to_string(warehouseEggCount));
-	warehouseWindow->DrawString(20, 105, "Milk stored: " + to_string(warehouseMilkCount));
-	warehouseWindow->DrawString(20, 140, "Egg price: $" + to_string(eggPrice));
-	warehouseWindow->DrawString(20, 175, "Milk price: $" + to_string(milkPrice));
-	warehouseWindow->DrawString(20, 205, "Click anywhere in this window to close.");
-	warehouseWindow->UpdateBuffer();
+    window* warehouseWindow = new window(430, 240, config.wx + 120, config.wy + 120);
+    warehouseWindow->SetWaitClose(false);
+    warehouseWindow->SetBuffering(true);
+    warehouseWindow->ChangeTitle("Warehouse Details");
 
-	int popupX = 0;
-	int popupY = 0;
-	warehouseWindow->WaitMouseClick(popupX, popupY);
-	delete warehouseWindow;
+    while (warehouseWindow->IsOpen())
+    {
+		//draw bkgrnd
+        warehouseWindow->SetPen(WHITE, 1);
+        warehouseWindow->SetBrush(WHITE);
+        warehouseWindow->DrawRectangle(0, 0, 430, 240);
+		//warehouse header
+        warehouseWindow->SetPen(BLACK);
+        warehouseWindow->SetFont(22, BOLD, BY_NAME, "Arial");
+        warehouseWindow->DrawString(20, 20, "Warehouse Summary");
+		//warehouse txt
+        warehouseWindow->SetFont(18, BOLD, BY_NAME, "Arial");
+        warehouseWindow->DrawString(20, 70, "Eggs: " + to_string(warehouseEggCount) + " ($" + to_string(warehouseEggCount * eggPrice) + ")");
+        warehouseWindow->DrawString(20, 110, "Milk: " + to_string(warehouseMilkCount) + " ($" + to_string(warehouseMilkCount * milkPrice) + ")");
+		
+        int btnL = 300, btnR = 400;
+        warehouseWindow->SetPen(DARKRED, 2);
+        warehouseWindow->SetBrush(WHITE);
+        warehouseWindow->DrawRectangle(btnL, 65, btnR, 95, FILLED, 8, 8);
+        warehouseWindow->DrawRectangle(btnL, 105, btnR, 135, FILLED, 8, 8);
+		//sell button
+        warehouseWindow->SetFont(16, BOLD, BY_NAME, "Arial");
+        warehouseWindow->DrawString(btnL + 15, 70, "SELL");
+        warehouseWindow->DrawString(btnL + 15, 110, "SELL");
+        warehouseWindow->UpdateBuffer();
+		//get click area
+        int popupX = 0, popupY = 0;
+        clicktype popupClick = warehouseWindow->GetMouseClick(popupX, popupY);
+
+        if (popupClick == LEFT_CLICK && popupX >= btnL && popupX <= btnR)
+        {
+            if (popupY >= 65 && popupY <= 95)
+            {
+                sellEggProducts();
+            }
+            else if (popupY >= 105 && popupY <= 135)
+            {
+                sellMilkProducts();
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+
+    delete warehouseWindow;
 }
 
 void Game::advanceLevel() // starts the level up function
@@ -750,7 +781,7 @@ void Game::advanceLevel() // starts the level up function
 	level++;
 	gametimer(level); //recalculates the timer for the new level
 	goalProgress = 0; //resets the current level goal progress
-	goalTarget += 5; //increases the next goal target after leveling up
+	goalTarget += 700; //increases the next goal target after leveling up
 	mainWolfVisible = true; //makes the main wolf visible again for the new level
 	consecutiveWolfClicks = 0;//resets the wolf click combo counter
 	spawnWolves();
@@ -1057,3 +1088,6 @@ void Game::updatePlayArea()
 
 	drawWarehouse();
 }
+
+
+
