@@ -287,6 +287,7 @@ void Game::drawWolf() const
 
 void Game::moveWolf()
 {
+	// CALCULATE VELOCITY: Base speed of 15, increases by 5 per level
 	int velocity = 15 + (level * 5);
 	int offset = (velocity * 2) + 1;
 
@@ -298,9 +299,9 @@ void Game::moveWolf()
 
 		// Boundary checks for extra wolves
 		if (wolves[i].x < 0) wolves[i].x = 0;
-		if (wolves[i].x > config.windWidth - 70) wolves[i].x = config.windWidth - 70;
+		if (wolves[i].x > config.windWidth - 100) wolves[i].x = config.windWidth - 100;
 		if (wolves[i].y < config.toolBarHeight * 2) wolves[i].y = config.toolBarHeight * 2;
-		if (wolves[i].y > config.windHeight - config.statusBarHeight - 70) wolves[i].y = config.windHeight - config.statusBarHeight - 70;
+		if (wolves[i].y > config.windHeight - config.statusBarHeight - 100) wolves[i].y = config.windHeight - config.statusBarHeight - 100;
 	}
 
 	// 2. Move primary wolf if visible
@@ -1026,8 +1027,27 @@ void Game::go()
 			updatePlayArea();
 		else if (paused && time > 0)
 			printMessage("Game paused"); // Only say paused if there is still time left
-		else if (time <= 0)
-			printMessage("Game Over");   // Say Game Over if time has run out
+		else if (time <= 0) 
+		{
+			pWind->SetPen(RED, 5);
+			pWind->SetFont(90, BOLD, BY_NAME, "Arial");
+
+			string msg = "GAME OVER";
+			int textWidth, textHeight;
+
+			// Calculate center of the screen instead of hardcoding the text position
+			pWind->GetStringSize(textWidth, textHeight, msg);
+			int x = (config.windWidth - textWidth) / 2;
+			int y = (config.windHeight - textHeight) / 2;
+
+			pWind->DrawString(x, y, msg);
+
+			// Shows the final budget below the Game Over message
+			pWind->SetFont(30, BOLD, BY_NAME, "Arial");
+			string subMsg = "Final Budget: $" + to_string(budget);
+			pWind->GetStringSize(textWidth, textHeight, subMsg);
+			pWind->DrawString((config.windWidth - textWidth) / 2, y + 100, subMsg);
+		}
 		else
 			redrawField();
 
