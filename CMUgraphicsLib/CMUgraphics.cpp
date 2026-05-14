@@ -468,8 +468,15 @@ int window::GetHeight() const {
 
 void window::GetWindowSize(int &iX, int &iY) const {
 
-	iX = iWindowWidth;
-	iY = iWindowHeight;
+    iX = iWindowWidth;
+    iY = iWindowHeight;
+
+}
+
+bool window::IsOpen() const {
+
+    return ::IsWindow(hwndWindow) != FALSE;
+
 }
 
 void window::GetMouseCoord(int &iX, int &iY) {
@@ -1508,3 +1515,4 @@ void window::Print() {
   	    cout << "Fatal Error: Failed to delete dcPrinter in Print!" << endl;
   	}
 }
+
