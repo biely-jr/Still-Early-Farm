@@ -45,6 +45,12 @@ private:
 	mutable string statusMessage; // string that stores the latest temporary message this is used for messages like Wolf hits and Level increased
 	mutable int statusMessageTimer; //a timer that decides how long that temporary message stays visible
 
+	bool wolvesSpawned; //acts as a switch ensuring we only trigger the spawn once per level
+	int wolfSpawnCountdown; //tracks the remaining seconds until the spawn event
+	
+	bool isAreaOccupiedByAnimal(int x, int y, int width, int height) const;
+	// Checks if any animal is currently inside the given rectangle coordinates to avoid wolves spawning on top of animals.
+
 	void initializeFoodAreas();
 	void clearPlayingArea() const;
 	void drawFieldBackground() const;
@@ -68,8 +74,8 @@ private:
 	void updateStatusMessageTimer(); //counts down the temporary message timer every game loop
 
 public:
-	int budget = 5000;
-	int level = 1;
+	int budget = 2500;
+	int level = 2;
 	int time = 150;
 	int animalcount = 0;
 	string wolfImagePath;
