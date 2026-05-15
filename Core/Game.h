@@ -28,6 +28,7 @@ private:
 	window* pWind;	//Pointer to the CMU graphics window
 	Toolbar* gameToolbar;
 	Budgetbar* gameBudgetbar;
+	std::vector<point> wolvesVel;   //Tracks the velocity for each extra wolf
 	std::vector<Animal*> animals;
 	std::vector<point> wolves;
 	std::vector<int> wolfHitCounts; //Each extra wolf gets its own number, so every wolf can be killed separately after 5 clicks
@@ -75,12 +76,15 @@ private:
 
 public:
 	int budget = 2500;
-	int level = 2;
+	int level = 1;
 	int time = 150;
 	int animalcount = 0;
+
 	string wolfImagePath;
 	mutable int wolfX;
 	mutable int wolfY;
+	mutable int wolfVelX;
+	mutable int wolfVelY;
 	void moveWolf();
 
 	void collectEggs();
