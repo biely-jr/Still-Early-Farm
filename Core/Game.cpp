@@ -60,6 +60,8 @@ Game::Game()
 	wolfImagePath = "images\\Wolf.jpg"; // Adjust extension if it's .png
 	wolfX = 835;
 	wolfY = 205;
+	wolfVelX = 1;
+	wolfVelY = 1;
 
 	//7- Create and clear the status bar
 	gametimer(level);
@@ -223,8 +225,9 @@ void Game::spawnWolves()
 {
 	wolves.clear();
 	wolfHitCounts.clear(); //When new wolves are spawned, it clears the old hit counters too, so the vector stays in sync with the wolves vector
+	wolvesVel.clear(); //Clear the velocity vector
 
-	int wolvesToSpawn = 1 + level;
+	int wolvesToSpawn = level - 1;
 	int minX = 50;
 	int maxX = config.windWidth - 140 - 50;
 
@@ -249,6 +252,13 @@ void Game::spawnWolves()
 		wolfPosition.y = randY;
 		wolves.push_back(wolfPosition);
 		wolfHitCounts.push_back(0);
+
+		// Give the new wolf a random initial velocity direction
+		point vel;
+		vel.x = (rand() % 3) - 1;
+		vel.y = (rand() % 3) - 1;
+		if (vel.x == 0 && vel.y == 0) vel.x = 1; // Ensure it's not standing still
+		wolvesVel.push_back(vel);
 	}
 
 	updatestatusbar();
@@ -287,36 +297,49 @@ void Game::drawWolf() const
 
 void Game::moveWolf()
 {
-	// CALCULATE VELOCITY: Base speed of 15, increases by 5 per level
-	int velocity = 15 + (level * 5);
-	int offset = (velocity * 2) + 1;
+	int speed = 4 + 2 * sqrt(level);
 
 	// 1. Move extra spawned wolves
 	for (size_t i = 0; i < wolves.size(); i++)
 	{
-		wolves[i].x += (rand() % offset - velocity);
-		wolves[i].y += (rand() % offset - velocity);
+		// 5% chance to change direction naturally (like the cow)
+		if (rand() % 100 < 5) {
+			wolvesVel[i].x = (rand() % 3) - 1;
+			wolvesVel[i].y = (rand() % 3) - 1;
+		}
 
-		// Boundary checks for extra wolves
-		if (wolves[i].x < 0) wolves[i].x = 0;
-		if (wolves[i].x > config.windWidth - 100) wolves[i].x = config.windWidth - 100;
-		if (wolves[i].y < config.toolBarHeight * 2) wolves[i].y = config.toolBarHeight * 2;
-		if (wolves[i].y > config.windHeight - config.statusBarHeight - 100) wolves[i].y = config.windHeight - config.statusBarHeight - 100;
+		// Apply smooth continuous movement using the velocity multiplied by level speed
+		wolves[i].x += wolvesVel[i].x * speed;
+		wolves[i].y += wolvesVel[i].y * speed;
+
+		// Boundary checks and bouncing for extra wolves
+		if (wolves[i].x < 0) { wolves[i].x = 0; wolvesVel[i].x = 1; }
+		if (wolves[i].x > config.windWidth - 70) { wolves[i].x = config.windWidth - 70; wolvesVel[i].x = -1; }
+		if (wolves[i].y < config.toolBarHeight * 2) { wolves[i].y = config.toolBarHeight * 2; wolvesVel[i].y = 1; }
+		if (wolves[i].y > config.windHeight - config.statusBarHeight - 70) { wolves[i].y = config.windHeight - config.statusBarHeight - 70; wolvesVel[i].y = -1; }
 	}
 
 	// 2. Move primary wolf if visible
 	if (mainWolfVisible)
 	{
-		wolfX += (rand() % offset - velocity);
-		wolfY += (rand() % offset - velocity);
+		// 10% chance to change direction naturally
+		if (rand() % 100 < 10) {
+			wolfVelX = (rand() % 3) - 1;
+			wolfVelY = (rand() % 3) - 1;
+		}
 
-		// Boundary checks for primary wolf
-		if (wolfX < 0) wolfX = 0;
-		if (wolfX > config.windWidth - 80) wolfX = config.windWidth - 80;
-		if (wolfY < config.toolBarHeight * 2) wolfY = config.toolBarHeight * 2;
-		if (wolfY > config.windHeight - config.statusBarHeight - 80) wolfY = config.windHeight - config.statusBarHeight - 80;
+		// Apply smooth continuous movement
+		wolfX += wolfVelX * speed;
+		wolfY += wolfVelY * speed;
+
+		// Boundary checks and bouncing for primary wolf
+		if (wolfX < 0) { wolfX = 0; wolfVelX = 1; }
+		if (wolfX > config.windWidth - 80) { wolfX = config.windWidth - 80; wolfVelX = -1; }
+		if (wolfY < config.toolBarHeight * 2) { wolfY = config.toolBarHeight * 2; wolfVelY = 1; }
+		if (wolfY > config.windHeight - config.statusBarHeight - 80) { wolfY = config.windHeight - config.statusBarHeight - 80; wolfVelY = -1; }
 	}
 }
+
 void Game::drawFoodArea(const FoodArea& area) const
 {
 	if (area.counter <= 0)
@@ -339,22 +362,6 @@ void Game::drawAllFoodAreas() const
 void Game::drawWarehouse() const
 {
 	pWind->DrawImage(warehouseImagePath, 1250, 550, 220, 180);
-
-	pWind->SetPen(BLACK, 2);
-	pWind->SetBrush(WHITE);
-	pWind->DrawRectangle(1135, 335, 1470, 445, FILLED, 10, 10);
-
-	pWind->SetFont(18, BOLD, BY_NAME, "Arial");
-	pWind->DrawString(1160, 355, "Eggs: " + to_string(warehouseEggCount) + "  $" + to_string(eggPrice));
-	pWind->DrawString(1160, 402, "Milk: " + to_string(warehouseMilkCount) + "  $" + to_string(milkPrice));
-
-	pWind->SetPen(DARKRED, 2);
-	pWind->SetBrush(WHITE);
-	pWind->DrawRectangle(sellButtonLeft, eggSellButtonTop, sellButtonRight, eggSellButtonBottom, FILLED, 8, 8);
-	pWind->DrawRectangle(sellButtonLeft, milkSellButtonTop, sellButtonRight, milkSellButtonBottom, FILLED, 8, 8);
-	pWind->SetFont(16, BOLD, BY_NAME, "Arial");
-	pWind->DrawString(sellButtonLeft + 18, eggSellButtonTop + 9, "SELL");
-	pWind->DrawString(sellButtonLeft + 18, milkSellButtonTop + 9, "SELL");
 }
 
 point Game::getRandomAnimalPosition(int animalWidth, int animalHeight) const
@@ -423,7 +430,7 @@ void Game::Restart()
 	paused = false; //Prevents pausing when restarting from a "Game Over"
 	budget = 2500;
 	animalcount = 0;
-
+	wolvesVel.clear();
 	mainWolfVisible = false;
 	wolves.clear();
 	consecutiveWolfClicks = 0;
@@ -829,6 +836,7 @@ void Game::advanceLevel() // starts the level up function
 	wolfSpawnCountdown = 10;
 	consecutiveWolfClicks = 0;//resets the wolf click combo counter
 	wolves.clear();
+	wolvesVel.clear();
 
 	//spawnWolves();
 	redrawField();
@@ -922,6 +930,7 @@ void Game::handlePlayAreaClick(int x, int y)
 			{
 				wolves.erase(wolves.begin() + i);
 				wolfHitCounts.erase(wolfHitCounts.begin() + i);
+				wolvesVel.erase(wolvesVel.begin() + i);
 				printMessage("A wolf disappeared.");
 			}
 			else
