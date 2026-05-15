@@ -433,6 +433,7 @@ void Game::Restart()
 	if (level == 1)
 		goalTarget = 500;
 	else {
+		goalTarget = 500;
 		for (int i = 1; i < level; i++)
 		{
 			goalTarget += 700;
