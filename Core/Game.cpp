@@ -965,7 +965,7 @@ void Game::handlePlayAreaClick(int x, int y)
 		{
 			mainWolfVisible = false;
 			consecutiveWolfClicks = 0;
-			deadWolves.push_back({ true, 20 });
+			deadWolves.push_back({ true, 15 });
 			printMessage("The Main wolf disappeared.");
 		}
 		else
@@ -988,7 +988,7 @@ void Game::handlePlayAreaClick(int x, int y)
 				wolves.erase(wolves.begin() + i);
 				wolfHitCounts.erase(wolfHitCounts.begin() + i);
 				wolvesVel.erase(wolvesVel.begin() + i);
-				deadWolves.push_back({ false, 20 });
+				deadWolves.push_back({ false, 15 });
 				printMessage("A wolf disappeared.");
 			}
 			else
