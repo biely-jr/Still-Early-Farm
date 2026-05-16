@@ -291,6 +291,54 @@ void Game::spawnWolves()
 	updatestatusbar();
 }
 
+void Game::tickWolfRespawns()
+{
+	for (auto it = deadWolves.begin(); it != deadWolves.end(); )
+	{
+		it->respawnCountdown--;
+
+		if (it->respawnCountdown <= 0)
+		{
+			if (it->isMain)
+			{
+				bool safe = false;
+				while (!safe)
+				{
+					wolfX = 50 + (rand() % (config.windWidth - 80 - 100));
+					wolfY = (2 * config.toolBarHeight + 20) + (rand() % (config.windHeight - config.statusBarHeight - 80 - 40));
+					safe = !isAreaOccupiedByAnimal(wolfX, wolfY, 80, 80);
+				}
+				mainWolfVisible = true;
+				printMessage("The main wolf is back!");
+			}
+			else
+			{
+				int randX, randY;
+				bool safe = false;
+				while (!safe)
+				{
+					randX = 50 + (rand() % (config.windWidth - 140 - 50));
+					randY = (2 * config.toolBarHeight) + 20 + (rand() % (config.windHeight - config.statusBarHeight - 140 - 20));
+					safe = !isAreaOccupiedByAnimal(randX, randY, 70, 70);
+				}
+				point wolfPos = { randX, randY };
+				wolves.push_back(wolfPos);
+				wolfHitCounts.push_back(0);
+				point vel;
+				vel.x = (rand() % 3) - 1;
+				vel.y = (rand() % 3) - 1;
+				if (vel.x == 0 && vel.y == 0) vel.x = 1;
+				wolvesVel.push_back(vel);
+				printMessage("A wolf is back!");
+			}
+
+			it = deadWolves.erase(it);
+		}
+		else
+			++it;
+	}
+}
+
 bool Game::isAreaOccupiedByAnimal(int x, int y, int width, int height) const
 {
 	for (Animal* animal : animals)
@@ -917,7 +965,8 @@ void Game::handlePlayAreaClick(int x, int y)
 		{
 			mainWolfVisible = false;
 			consecutiveWolfClicks = 0;
-			printMessage("The wolf disappeared.");
+			deadWolves.push_back({ true, 20 });
+			printMessage("The Main wolf disappeared.");
 		}
 		else
 		{
@@ -939,6 +988,7 @@ void Game::handlePlayAreaClick(int x, int y)
 				wolves.erase(wolves.begin() + i);
 				wolfHitCounts.erase(wolfHitCounts.begin() + i);
 				wolvesVel.erase(wolvesVel.begin() + i);
+				deadWolves.push_back({ false, 20 });
 				printMessage("A wolf disappeared.");
 			}
 			else
@@ -998,7 +1048,7 @@ void Game::go()
 					}
 					mainWolfVisible = true;
 					spawnWolves();
-					printMessage("Watch out! The wolves have arrived!");
+					if (level == 1) printMessage("Watch out! The wolves have arrived!");
 				}
 			}
 
@@ -1007,6 +1057,7 @@ void Game::go()
 			}
 
 			lastTime = currentTime; // Reset the clock tracker
+			tickWolfRespawns();
 		}
 		else if (paused)
 		{
