@@ -30,6 +30,14 @@ private:
 	};
 
 	std::vector<GrassData> grassPatches; // Stores the coordinates of all spawned grass
+
+	struct ProductData
+	{
+		string label;
+		point pos;
+	};
+
+	std::vector<ProductData> fieldProducts;
 	
 	bool paused;
 	int eggCount;
@@ -62,7 +70,14 @@ private:
 	void drawFieldBackground() const;
 	void drawWolf() const;
 	void drawWarehouse() const;
+	void drawFieldProducts() const;
+	void drawCollectAllButton() const;
+	void addFieldProduct(const string& productLabel, point animalPosition, int animalWidth, int animalHeight);
 	point getRandomAnimalPosition(int animalWidth, int animalHeight) const;
+	bool collectFieldProductAt(int x, int y);
+	bool isPointInsideCollectAllButton(int x, int y) const;
+	void sellEggProducts(int amount);
+	void sellMilkProducts(int amount);
 	bool isPointInsidePrimaryWolf(int x, int y) const; //checks whether a click landed on the main wolf.
 	bool isPointInsideExtraWolf(int index, int x, int y) const; //checks whether the player clicked one of the extra wolves
 	bool isPointInsideWarehouse(int x, int y) const; //checks whether a click landed on the warehouse.
@@ -129,6 +144,7 @@ public:
 	void resumeGame();
 	void saveGame();
 	void loadGame();
+	void collectAllFieldProducts();
 	void sellEggProducts();
 	void sellMilkProducts();
 	bool isPaused() const;
