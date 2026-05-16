@@ -58,10 +58,10 @@ public:
 
 };
 
-class WaterIcon : public BudgetbarIcon
+class FoodAreaIcon : public BudgetbarIcon
 {
 public:
-	WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path);
+	FoodAreaIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path);
 	virtual void draw() const override;
 	virtual void onClick() override;
 };
@@ -71,7 +71,7 @@ public:
 enum ANIMAL_ICONS //The icons of the toolbar (you should add more icons)
 {
 	//If you want to change the menu icons order, change the order here
-	ICON_WATER,
+	ICON_FOOD_AREA,
 	ICON_CHICK,
 	ICON_COW,
 	ANIMAL_COUNT
