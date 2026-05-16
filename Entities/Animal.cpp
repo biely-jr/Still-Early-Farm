@@ -34,18 +34,21 @@ void Animal::draw() const
 	pWind->DrawString(RefPoint.x + 4, RefPoint.y - 24, to_string(productionElapsedSeconds) + "/" + to_string(productionIntervalSeconds));
 }
 
-void Animal::advanceProduction(int elapsedSeconds)
+bool Animal::advanceProduction(int elapsedSeconds)
 {
-	if (elapsedSeconds <= 0)
-		return;
-
+	// 1. Increase the timer
 	productionElapsedSeconds += elapsedSeconds;
 
-	while (productionElapsedSeconds >= productionIntervalSeconds)
+	// 2. Check if the limit is reached
+	if (productionElapsedSeconds >= productionIntervalSeconds)
 	{
-		productionElapsedSeconds -= productionIntervalSeconds;
-		pGame->registerAnimalProduct(productLabel);
+		// Reset the timer for the next product
+		productionElapsedSeconds = 0;
+
+		return true; // Product is ready!
 	}
+
+	return false; // Not ready yet
 }
 
 int Animal::getProductionCounter() const
@@ -69,12 +72,6 @@ Chick::Chick(Game* r_pGame, point r_point, int r_width, int r_height, string img
 
 void Chick::moveStep()
 {
-	//TO DO: add code for cleanup and game exit here
-	/*
-	//draw image of this object in the field
-	window* pWind = pGame->getWind();
-	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
-	*/
 	cout << "Icon Chick Clicked" << endl;
 
 	// Update position based on velocity
@@ -99,7 +96,6 @@ Cow::Cow(Game* r_pGame, point r_point, int r_width, int r_height, string img_pat
 
 void Cow::moveStep()
 {
-	//TO DO: add code for cleanup and game exit here
 	cout << "Icon Cow Clicked" << endl;
 
 	// Cows change direction slightly less often than chicks
