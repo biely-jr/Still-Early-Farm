@@ -51,6 +51,11 @@ bool Animal::advanceProduction(int elapsedSeconds)
 	return false; // Not ready yet
 }
 
+void Animal::addProductionTime(int seconds)
+{
+	productionElapsedSeconds += seconds;
+}
+
 int Animal::getProductionCounter() const
 {
 	return productionElapsedSeconds;
