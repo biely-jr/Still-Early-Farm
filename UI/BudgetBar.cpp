@@ -59,14 +59,26 @@ void CowIcon::onClick()
 WaterIcon::WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path)
 	: BudgetbarIcon(r_pGame, r_point, r_width, r_height, img_path)
 {
-	count = 0;
-	grassList = new point[50]; // Max 50 green areas
 }
 
 // The randomized coordinates (X,Y) are calculated and stored through this function implementation
 void WaterIcon::onClick()
 {
-	pGame->placeFoodArea();
+	if (pGame->spendBudget(50))
+	{
+		// 1. Generate random X and Y within the playable field boundaries
+		int randomX = range_min_x + rand() % (range_max_x - range_min_x + 1);
+		int randomY = range_min_y + rand() % (range_max_y - range_min_y + 1);
+
+		point newGrassPos = { randomX, randomY };
+
+		// 2. Send the coordinate to the Game to be stored and drawn
+		pGame->addGrassPatch(newGrassPos);
+	}
+	else
+	{
+		pGame->printMessage("Not enough budget for water!");
+	}
 }
 
 Budgetbar::Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height) : Drawable(r_pGame, r_point, r_width, r_height)
@@ -158,10 +170,6 @@ void WaterIcon::draw() const
 {
 	window* pWind = pGame->getWind();
 	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
-}
-
-void WaterIcon::moveAnimals()
-{
 }
 
 void Budgetbar::moveAllAnimals()
