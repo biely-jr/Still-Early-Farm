@@ -218,7 +218,7 @@ void Game::addGrassPatch(point p)
 {
     GrassData newGrass;
     newGrass.pos = p;
-    newGrass.timeRemaining = 10; // Set lifespan to 10 seconds
+    newGrass.timeRemaining = 30; // Set lifespan to 30 seconds
     
     grassPatches.push_back(newGrass);
 }
@@ -691,6 +691,37 @@ void Game::updateAnimalProduction(int elapsedSeconds)
 				// Optional: updatestatusbar();
 			}
 		}
+	}
+
+	// Base countdown: tick every grass patch down by 1 each second
+	for (GrassData& grass : grassPatches)
+		grass.timeRemaining--;
+
+	// Grass-animal interaction: animal on grass gets +1, that patch loses 1 extra
+	for (Animal* animal : animals)
+	{
+		point p = animal->getRefPoint();
+		int w = animal->getWidth();
+		int h = animal->getHeight();
+
+		for (GrassData& grass : grassPatches)
+		{
+			if (p.x < grass.pos.x + 40 && p.x + w > grass.pos.x &&
+				p.y < grass.pos.y + 40 && p.y + h > grass.pos.y)
+			{
+				animal->addProductionTime(2); // animal earns +1 extra production second
+				grass.timeRemaining -= 2;        // this patch loses 1 extra second
+			}
+		}
+	}
+
+	// Remove expired patches
+	for (auto it = grassPatches.begin(); it != grassPatches.end(); )
+	{
+		if (it->timeRemaining <= 0)
+			it = grassPatches.erase(it);
+		else
+			++it;
 	}
 }
 
