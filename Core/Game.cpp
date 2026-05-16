@@ -11,7 +11,6 @@ namespace
 	const int chickCost = 100;
 	const int cowCost = 200;
 	const string wolfImagePath = "images\\Wolf.jpg";
-	const string foodAreaImagePath = "images\\FoodArea.jpg";
 	const string eggImagePath = "images\\Egg.jpg";
 	const string milkImagePath = "images\\Milk.jpg";
 	const string warehouseImagePath = "images\\warehouse.jpg";
@@ -57,7 +56,7 @@ Game::Game()
 
 	//6- Create the enemies
 	//TODO: Add code to create and draw enemies in random places
-	wolfImagePath = "images\\Wolf.jpg"; // Adjust extension if it's .png
+	wolfImagePath = "images\\Wolf.jpg";
 	wolfX = 835;
 	wolfY = 205;
 	wolfVelX = 1;
@@ -70,7 +69,6 @@ Game::Game()
 	clearStatusBar();
 	//spawnWolves();
 	clearStatusBar();
-	initializeFoodAreas();
 	redrawField();
 
 }
@@ -149,12 +147,6 @@ void Game::createBudgetbar()
 	gameBudgetbar->draw();
 }
 
-void Game::initializeFoodAreas()
-{
-	foodAreas[0] = { {0, 0}, 180, 90, 0, LIGHTGREEN, "FOOD" };
-	foodAreas[1] = { {0, 0}, 180, 90, 0, LIGHTGREEN, "FOOD" };
-}
-
 void Game::clearBudget() const
 {
 	//Clear Status bar by drawing a filled rectangle
@@ -219,6 +211,41 @@ void Game::drawFieldBackground() const
 
 	pWind->SetPen(SANDYBROWN, 4);
 	pWind->DrawLine(0, playTop + 140, config.windWidth, playTop + 140);
+}
+
+// Adds a new grass patch to the list
+void Game::addGrassPatch(point p)
+{
+    GrassData newGrass;
+    newGrass.pos = p;
+    newGrass.timeRemaining = 10; // Set lifespan to 10 seconds
+    
+    grassPatches.push_back(newGrass);
+}
+
+// Draws all grass patches on the screen
+void Game::drawGrass() const
+{
+	for (const GrassData& grass : grassPatches)
+	{
+		pWind->SetPen(DARKGREEN);
+		pWind->SetBrush(GREEN);
+		pWind->DrawRectangle(grass.pos.x, grass.pos.y, grass.pos.x + 40, grass.pos.y + 40);
+	}
+}
+
+// Checks if an animal's bounding box intersects with any grass patch
+bool Game::isStandingOnGrass(point p, int w, int h) const
+{
+	for (const GrassData& grass : grassPatches)
+	{
+		if (p.x < grass.pos.x + 40 && p.x + w > grass.pos.x &&
+			p.y < grass.pos.y + 40 && p.y + h > grass.pos.y)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void Game::spawnWolves()
@@ -340,25 +367,6 @@ void Game::moveWolf()
 	}
 }
 
-void Game::drawFoodArea(const FoodArea& area) const
-{
-	if (area.counter <= 0)
-		return;
-
-	pWind->DrawImage(foodAreaImagePath, area.topLeft.x, area.topLeft.y, area.width, area.height);
-
-	pWind->SetPen(BLACK, 2);
-	pWind->SetBrush(WHITE);
-	pWind->SetFont(16, BOLD, BY_NAME, "Arial");
-	pWind->DrawString(area.topLeft.x + 22, area.topLeft.y + 32, area.label);
-}
-
-void Game::drawAllFoodAreas() const
-{
-	for (const FoodArea& area : foodAreas)
-		drawFoodArea(area);
-}
-
 void Game::drawWarehouse() const
 {
 	pWind->DrawImage(warehouseImagePath, 1250, 550, 220, 180);
@@ -383,46 +391,6 @@ point Game::getRandomAnimalPosition(int animalWidth, int animalHeight) const
 	return p;
 }
 
-point Game::getRandomFoodAreaPosition() const
-{
-	static std::random_device rd;
-	static std::mt19937 gen(rd());
-
-	const int foodWidth = 180;
-	const int foodHeight = 90;
-	const int minX = 40;
-	const int maxX = config.windWidth - foodWidth - 40;
-	const int minY = (2 * config.toolBarHeight) + 150;
-	const int maxY = config.windHeight - config.statusBarHeight - foodHeight - 20;
-
-	std::uniform_int_distribution<int> distX(minX, maxX);
-	std::uniform_int_distribution<int> distY(minY, maxY);
-
-	point p;
-	p.x = distX(gen);
-	p.y = distY(gen);
-	return p;
-}
-
-bool Game::isAnimalStandingOnFood(const Animal* animal) const
-{
-	point p = animal->getRefPoint();
-	int w = animal->getWidth();
-	int h = animal->getHeight();
-
-	for (const FoodArea& area : foodAreas)
-	{
-		if (area.counter > 0 &&
-			p.x < area.topLeft.x + area.width && p.x + w > area.topLeft.x &&
-			p.y < area.topLeft.y + area.height && p.y + h > area.topLeft.y)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
 void Game::Restart()
 {
 	cout << "Restart button clicked" << endl;
@@ -436,6 +404,7 @@ void Game::Restart()
 	consecutiveWolfClicks = 0;
 	wolvesSpawned = false;
 	wolfSpawnCountdown = 10;
+	grassPatches.clear();
 
 	if (level == 1)
 		goalTarget = 500;
@@ -476,7 +445,6 @@ void Game::Restart()
 	// 5. Clear status bar
 	clearStatusBar();
 
-	initializeFoodAreas();
 	//spawnWolves();
 	redrawField();
 	updatestatusbar();
@@ -511,7 +479,8 @@ void Game::redrawField() const
 	clearPlayingArea();
 	drawFieldBackground();
 	drawfieldboundary();
-	drawAllFoodAreas();
+	drawGrass();
+
 	drawWolf();
 
 	int chickCounter = 1;
@@ -617,11 +586,6 @@ void Game::placeFoodArea()
 		return;
 	}
 
-	static int nextFoodArea = 0;
-	foodAreas[nextFoodArea].topLeft = getRandomFoodAreaPosition();
-	foodAreas[nextFoodArea].counter = 1;
-	nextFoodArea = (nextFoodArea + 1) % 2;
-
 	redrawField();
 	printBudget("BUDGET = $" + to_string(budget));
 	printMessage("Food area added. Cost = $50.");
@@ -712,8 +676,21 @@ void Game::updateAnimalProduction(int elapsedSeconds)
 {
 	for (Animal* animal : animals)
 	{
-		if (isAnimalStandingOnFood(animal))
-			animal->advanceProduction(elapsedSeconds);
+		// Tell the animal time has passed. If it returns true, it produced something.
+		if (animal->advanceProduction(elapsedSeconds))
+		{
+			// Check which animal it is and add the product to the Game's inventory
+			if (animal->getProductLabel() == "Egg")
+			{
+				warehouseEggCount++;
+				// Optional: updatestatusbar();
+			}
+			else if (animal->getProductLabel() == "Milk")
+			{
+				warehouseMilkCount++;
+				// Optional: updatestatusbar();
+			}
+		}
 	}
 }
 
@@ -1004,16 +981,6 @@ void Game::go()
 		{
 			lastTime = currentTime;
 		}
-
-		if (!paused)
-		{
-			int elapsedProductionSeconds = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastProductionTick).count());
-			if (elapsedProductionSeconds >= 1)
-			{
-				updateAnimalProduction(elapsedProductionSeconds);
-				lastProductionTick = currentTime;
-			}
-		}
 		else
 		{
 			lastProductionTick = currentTime;
@@ -1140,11 +1107,35 @@ void Game::updatePlayArea()
 	for (Animal* animal : animals)
 		animal->moveStep();
 
+	static auto lastTime = std::chrono::steady_clock::now();
+	auto currentTime = std::chrono::steady_clock::now();
+
+	int realSecondsPassed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count();
+
+	// 1. Check if the game is paused (from clicking Pause or opening Warehouse)
+	if (paused || realSecondsPassed > 1) // large gap means we just resumed from a pause
+	{
+		lastTime = currentTime; // discard accumulated pause time
+		realSecondsPassed = 0;  // don't advance the production counter
+	}
+	else if (realSecondsPassed >= 1)
+	{
+		updateAnimalProduction(realSecondsPassed);
+		lastTime = currentTime;
+	}
+
+	// 2. If NOT paused, check if a second has passed
+	else if (realSecondsPassed >= 1)
+	{
+		updateAnimalProduction(realSecondsPassed); // Tell animals to produce
+		lastTime = currentTime; // Reset the timer for the next second
+	}
+
 	// 3. Clear the playing area and draw static background elements
 	clearPlayingArea();
 	drawFieldBackground();
 	drawfieldboundary();
-	drawAllFoodAreas();
+	drawGrass();
 
 	// 4. Draw the grass (and any old array animals) so it sits on the ground
 	gameBudgetbar->moveAllAnimals();
