@@ -61,14 +61,9 @@ public:
 class WaterIcon : public BudgetbarIcon
 {
 public:
-	point* grassList;   // Array to keep track of the green areas
-	int count = 0;
-
 	WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path);
-
 	virtual void draw() const override;
 	virtual void onClick() override;
-	virtual void moveAnimals() override;
 };
 
 // TO DO: The rest of icons in the toolbar
