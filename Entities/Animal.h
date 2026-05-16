@@ -15,7 +15,7 @@ public:
 	Animal(Game* r_pGame, point r_point, int r_width, int r_height, string img_path, int productIntervalSeconds, const string& productName);
 	virtual void draw() const override; //The function prototype in Drawable.h is overridden here
 	virtual void moveStep() = 0;   //The action that should be taken each time step
-	void advanceProduction(int elapsedSeconds);
+	bool advanceProduction(int elapsedSeconds);
 	int getProductionCounter() const;
 	int getProductionInterval() const;
 	string getProductLabel() const;
