@@ -56,13 +56,13 @@ void CowIcon::onClick()
 	pGame->placeAnimal(ANIMAL_COW);
 }
 
-WaterIcon::WaterIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path)
+FoodAreaIcon::FoodAreaIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path)
 	: BudgetbarIcon(r_pGame, r_point, r_width, r_height, img_path)
 {
 }
 
 // The randomized coordinates (X,Y) are calculated and stored through this function implementation
-void WaterIcon::onClick()
+void FoodAreaIcon::onClick()
 {
 	if (pGame->spendBudget(50))
 	{
@@ -77,14 +77,14 @@ void WaterIcon::onClick()
 	}
 	else
 	{
-		pGame->printMessage("Not enough budget for water!");
+		pGame->printMessage("Not enough budget for food area!");
 	}
 }
 
 Budgetbar::Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height) : Drawable(r_pGame, r_point, r_width, r_height)
 {
 	//To control the order of these images in the menu, they must be ordered as follows	to ensure the animals pass OVER the grass patch
-	iconsImages[ICON_WATER] = "images\\clean-water.jpg";
+	iconsImages[ICON_FOOD_AREA] = "images\\FoodArea.jpg";
 	iconsImages[ICON_CHICK] = "images\\chick.jpg";
 	iconsImages[ICON_COW] = "images\\cow.jpg";
 
@@ -94,7 +94,7 @@ Budgetbar::Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height) : 
 
 	iconsList = new BudgetbarIcon * [ANIMAL_COUNT];
 
-	iconsList[ICON_WATER] = new WaterIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_WATER]);
+	iconsList[ICON_FOOD_AREA] = new FoodAreaIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_FOOD_AREA]);
 	p.x += config.iconWidth;
 
 	//For each icon in the tool bar create an object 
@@ -166,7 +166,7 @@ void CowIcon::moveAnimals()
 	}
 }
 
-void WaterIcon::draw() const
+void FoodAreaIcon::draw() const
 {
 	window* pWind = pGame->getWind();
 	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
