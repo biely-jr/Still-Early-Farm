@@ -12,16 +12,6 @@ enum AnimalType
 	ANIMAL_COW
 };
 
-struct FoodArea
-{
-	point topLeft;
-	int width;
-	int height;
-	int counter;
-	color fillColor;
-	string label;
-};
-
 class Game
 {
 private:
@@ -32,7 +22,15 @@ private:
 	std::vector<Animal*> animals;
 	std::vector<point> wolves;
 	std::vector<int> wolfHitCounts; //Each extra wolf gets its own number, so every wolf can be killed separately after 5 clicks
-	FoodArea foodAreas[2];
+
+	struct GrassData 
+	{
+		point pos;
+		int timeRemaining; // Tracks seconds until the grass disappears
+	};
+
+	std::vector<GrassData> grassPatches; // Stores the coordinates of all spawned grass
+	
 	bool paused;
 	int eggCount;
 	int milkCount;
@@ -52,16 +50,11 @@ private:
 	bool isAreaOccupiedByAnimal(int x, int y, int width, int height) const;
 	// Checks if any animal is currently inside the given rectangle coordinates to avoid wolves spawning on top of animals.
 
-	void initializeFoodAreas();
 	void clearPlayingArea() const;
 	void drawFieldBackground() const;
 	void drawWolf() const;
-	void drawFoodArea(const FoodArea& area) const ;
-	void drawAllFoodAreas() const;
 	void drawWarehouse() const;
 	point getRandomAnimalPosition(int animalWidth, int animalHeight) const;
-	point getRandomFoodAreaPosition() const;
-	bool isAnimalStandingOnFood(const Animal* animal) const;
 	bool isPointInsidePrimaryWolf(int x, int y) const; //checks whether a click landed on the main wolf.
 	bool isPointInsideExtraWolf(int index, int x, int y) const; //checks whether the player clicked one of the extra wolves
 	bool isPointInsideWarehouse(int x, int y) const; //checks whether a click landed on the warehouse.
@@ -86,6 +79,10 @@ public:
 	mutable int wolfVelX;
 	mutable int wolfVelY;
 	void moveWolf();
+
+	void addGrassPatch(point p);
+	void drawGrass() const;
+	bool isStandingOnGrass(point p, int w, int h) const;
 
 	void collectEggs();
 	void collectMilk();
