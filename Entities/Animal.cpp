@@ -6,6 +6,45 @@
 #include <cstdlib>
 using namespace std;
 
+namespace
+{
+	void keepAnimalInsideField(point& position, point& velocity, int width, int height)
+	{
+		const int minX = 0;
+		const int maxX = config.windWidth - width;
+		const int minY = config.toolBarHeight * 2;
+		const int maxY = config.windHeight - config.statusBarHeight - height;
+
+		if (position.x < minX)
+		{
+			position.x = minX;
+			velocity.x = (velocity.x == 0) ? 1 : -velocity.x;
+		}
+		else if (position.x > maxX)
+		{
+			position.x = maxX;
+			velocity.x = (velocity.x == 0) ? -1 : -velocity.x;
+		}
+
+		if (position.y < minY)
+		{
+			position.y = minY;
+			velocity.y = (velocity.y == 0) ? 1 : -velocity.y;
+		}
+		else if (position.y > maxY)
+		{
+			position.y = maxY;
+			velocity.y = (velocity.y == 0) ? -1 : -velocity.y;
+		}
+	}
+
+	void avoidStillVelocity(point& velocity)
+	{
+		if (velocity.x == 0 && velocity.y == 0)
+			velocity.x = 1;
+	}
+}
+
 Animal::Animal(Game* r_pGame, point r_point, int r_width, int r_height, string img_path, int productIntervalSeconds, const string& productName)
 	: Drawable(r_pGame, r_point, r_width, r_height),
 	productionElapsedSeconds(0),
@@ -83,16 +122,7 @@ void Chick::moveStep()
 	RefPoint.x += curr_vel.x * 3;
 	RefPoint.y += curr_vel.y * 3;
 
-	int min_x = 50;
-	int max_x = config.windWidth - 50;
-	int min_y = (config.toolBarHeight * 2) + 50;
-	int max_y = config.windHeight - config.statusBarHeight - 50;
-
-	// Bounce off walls if they go out of bounds
-	if (RefPoint.x < min_x) { RefPoint.x = min_x; curr_vel.x = 1; }
-	if (RefPoint.x > max_x) { RefPoint.x = max_x; curr_vel.x = -1; }
-	if (RefPoint.y < min_y) { RefPoint.y = min_y; curr_vel.y = 1; }
-	if (RefPoint.y > max_y) { RefPoint.y = max_y; curr_vel.y = -1; }
+	keepAnimalInsideField(RefPoint, curr_vel, width, height);
 }
 
 Cow::Cow(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : Animal(r_pGame, r_point, r_width, r_height, img_path, 15, "Milk")
@@ -107,20 +137,12 @@ void Cow::moveStep()
 	if (rand() % 100 < 5) {
 		curr_vel.x = (rand() % 3) - 1;
 		curr_vel.y = (rand() % 3) - 1;
+		avoidStillVelocity(curr_vel);
 	}
 
 	// Update position based on velocity
 	RefPoint.x += curr_vel.x * 2;
 	RefPoint.y += curr_vel.y * 2;
 
-	int min_x = 50;
-	int max_x = config.windWidth - 50;
-	int min_y = (config.toolBarHeight * 2) + 50;
-	int max_y = config.windHeight - config.statusBarHeight - 50;
-
-	// Bounce off walls if they go out of bounds
-	if (RefPoint.x < min_x) { RefPoint.x = min_x; curr_vel.x = 1; }
-	if (RefPoint.x > max_x) { RefPoint.x = max_x; curr_vel.x = -1; }
-	if (RefPoint.y < min_y) { RefPoint.y = min_y; curr_vel.y = 1; }
-	if (RefPoint.y > max_y) { RefPoint.y = max_y; curr_vel.y = -1; }
+	keepAnimalInsideField(RefPoint, curr_vel, width, height);
 }
