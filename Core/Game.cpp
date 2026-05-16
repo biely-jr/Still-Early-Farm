@@ -29,8 +29,8 @@ namespace
 	const int milkSellButtonTop = 397;
 	const int milkSellButtonBottom = 427;
 	const string musicAlias = "farm_bgm";
-	const string musicPathFromProject = "Audio\\videoplayback.mp3";
-	const string musicPathFromDebug = "..\\Audio\\videoplayback.mp3";
+	const string musicPathFromProject = "audio\\videoplayback.mp3";
+	const string musicPathFromDebug = "..\\audio\\videoplayback.mp3";
 
 	string getExistingMusicPath()
 	{
