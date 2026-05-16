@@ -19,6 +19,7 @@ public:
 	int getProductionCounter() const;
 	int getProductionInterval() const;
 	string getProductLabel() const;
+	void addProductionTime(int seconds); // called when animal stands on grass
 };
 
 class Chick : public Animal
