@@ -8,6 +8,11 @@ using namespace std;
 
 namespace
 {
+	const int WAREHOUSE_X = 1250;
+	const int WAREHOUSE_Y = 550;
+	const int WAREHOUSE_W = 220;
+	const int WAREHOUSE_H = 180;
+
 	void keepAnimalInsideField(point& position, point& velocity, int width, int height)
 	{
 		const int minX = 0;
@@ -35,6 +40,38 @@ namespace
 		{
 			position.y = maxY;
 			velocity.y = (velocity.y == 0) ? -1 : -velocity.y;
+		}
+
+		// -------------------------------------------------------
+		// Warehouse boundary: bounce the animal off the warehouse
+		// -------------------------------------------------------
+		bool overlapX = (position.x + width > WAREHOUSE_X) && (position.x < WAREHOUSE_X + WAREHOUSE_W);
+		bool overlapY = (position.y + height > WAREHOUSE_Y) && (position.y < WAREHOUSE_Y + WAREHOUSE_H);
+
+		if (overlapX && overlapY)
+		{
+			int penLeft = (position.x + width) - WAREHOUSE_X;
+			int penRight = (WAREHOUSE_X + WAREHOUSE_W) - position.x;
+			int penTop = (position.y + height) - WAREHOUSE_Y;
+			int penBottom = (WAREHOUSE_Y + WAREHOUSE_H) - position.y;
+
+			int minPenX = min(penLeft, penRight);
+			int minPenY = min(penTop, penBottom);
+
+			if (minPenX < minPenY)
+			{
+				// Push out horizontally
+				if (penLeft < penRight) position.x = WAREHOUSE_X - width;
+				else                    position.x = WAREHOUSE_X + WAREHOUSE_W;
+				velocity.x = (velocity.x == 0) ? 1 : -velocity.x;
+			}
+			else
+			{
+				// Push out vertically
+				if (penTop < penBottom) position.y = WAREHOUSE_Y - height;
+				else                    position.y = WAREHOUSE_Y + WAREHOUSE_H;
+				velocity.y = (velocity.y == 0) ? 1 : -velocity.y;
+			}
 		}
 	}
 
