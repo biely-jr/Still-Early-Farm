@@ -47,6 +47,14 @@ private:
 	bool wolvesSpawned; //acts as a switch ensuring we only trigger the spawn once per level
 	int wolfSpawnCountdown; //tracks the remaining seconds until the spawn event
 	
+	struct DeadWolf
+	{
+		bool isMain;          // true = main wolf, false = clone
+		int respawnCountdown; // seconds remaining until respawn
+	};
+	std::vector<DeadWolf> deadWolves;
+	void tickWolfRespawns(); // counts down timers and respawns dead wolves
+
 	bool isAreaOccupiedByAnimal(int x, int y, int width, int height) const;
 	// Checks if any animal is currently inside the given rectangle coordinates to avoid wolves spawning on top of animals.
 
