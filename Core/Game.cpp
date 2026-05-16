@@ -5,15 +5,21 @@
 #include <chrono>
 #include "../Entities/Animal.h"
 #include <random>
+#include <fstream>
+#include <mmsystem.h>
 
 namespace
 {
 	const int chickCost = 100;
 	const int cowCost = 200;
+	const string backgroundImagePath = "images\\BackGround.jpg";
 	const string wolfImagePath = "images\\Wolf.jpg";
 	const string eggImagePath = "images\\Egg.jpg";
 	const string milkImagePath = "images\\Milk.jpg";
 	const string warehouseImagePath = "images\\warehouse.jpg";
+	const string collectAllImagePath = "images\\claim-all.jpg";
+	const int collectAllButtonWidth = 70;
+	const int collectAllButtonHeight = 50;
 	const int eggPrice = 25;
 	const int milkPrice = 50;
 	const int sellButtonLeft = 1375;
@@ -22,6 +28,36 @@ namespace
 	const int eggSellButtonBottom = 382;
 	const int milkSellButtonTop = 397;
 	const int milkSellButtonBottom = 427;
+	const string musicAlias = "farm_bgm";
+	const string musicPathFromProject = "Audio\\videoplayback.mp3";
+	const string musicPathFromDebug = "..\\Audio\\videoplayback.mp3";
+
+	string getExistingMusicPath()
+	{
+		if (GetFileAttributesA(musicPathFromProject.c_str()) != INVALID_FILE_ATTRIBUTES)
+			return musicPathFromProject;
+		if (GetFileAttributesA(musicPathFromDebug.c_str()) != INVALID_FILE_ATTRIBUTES)
+			return musicPathFromDebug;
+		return "";
+	}
+
+	void startBackgroundMusic()
+	{
+		string musicPath = getExistingMusicPath();
+		if (musicPath.empty())
+			return;
+
+		mciSendStringA(("close " + musicAlias).c_str(), NULL, 0, NULL);
+		string openCommand = "open \"" + musicPath + "\" type mpegvideo alias " + musicAlias;
+		if (mciSendStringA(openCommand.c_str(), NULL, 0, NULL) == 0)
+			mciSendStringA(("play " + musicAlias + " repeat").c_str(), NULL, 0, NULL);
+	}
+
+	void stopBackgroundMusic()
+	{
+		mciSendStringA(("stop " + musicAlias).c_str(), NULL, 0, NULL);
+		mciSendStringA(("close " + musicAlias).c_str(), NULL, 0, NULL);
+	}
 }
 
 Game::Game()
@@ -41,6 +77,7 @@ Game::Game()
 {
 	//1 - Create the main window
 	pWind = CreateWind(config.windWidth, config.windHeight, config.wx, config.wy);
+	startBackgroundMusic();
 
 	//2 - create and draw the toolbar
 	createToolbar();
@@ -75,6 +112,8 @@ Game::Game()
 
 Game::~Game()
 {
+	stopBackgroundMusic();
+
 	for (Animal* animal : animals)
 		delete animal;
 
@@ -201,16 +240,7 @@ void Game::drawFieldBackground() const
 	const int playTop = 2 * config.toolBarHeight;
 	const int playBottom = config.windHeight - config.statusBarHeight;
 
-	pWind->SetPen(SKYBLUE, 1);
-	pWind->SetBrush(SKYBLUE);
-	pWind->DrawRectangle(0, playTop, config.windWidth, playTop + 140);
-
-	pWind->SetPen(LIGHTGREEN, 1);
-	pWind->SetBrush(LIGHTGREEN);
-	pWind->DrawRectangle(0, playTop + 140, config.windWidth, playBottom);
-
-	pWind->SetPen(SANDYBROWN, 4);
-	pWind->DrawLine(0, playTop + 140, config.windWidth, playTop + 140);
+	pWind->DrawImage(backgroundImagePath, 0, playTop, config.windWidth, playBottom - playTop);
 }
 
 // Adds a new grass patch to the list
@@ -420,6 +450,39 @@ void Game::drawWarehouse() const
 	pWind->DrawImage(warehouseImagePath, 1250, 550, 220, 180);
 }
 
+void Game::drawFieldProducts() const
+{
+	for (const ProductData& product : fieldProducts)
+	{
+		const string imagePath = (product.label == "Egg") ? eggImagePath : milkImagePath;
+		pWind->DrawImage(imagePath, product.pos.x, product.pos.y, 30, 30);
+	}
+}
+
+void Game::drawCollectAllButton() const
+{
+	pWind->DrawImage(collectAllImagePath, config.windWidth - collectAllButtonWidth, 0, collectAllButtonWidth, collectAllButtonHeight);
+}
+
+void Game::addFieldProduct(const string& productLabel, point animalPosition, int animalWidth, int animalHeight)
+{
+	ProductData product;
+	product.label = productLabel;
+	product.pos.x = animalPosition.x + (animalWidth / 2) - 15;
+	product.pos.y = animalPosition.y + (animalHeight / 2) - 15;
+
+	if (product.pos.x < 0)
+		product.pos.x = 0;
+	if (product.pos.x > config.windWidth - 30)
+		product.pos.x = config.windWidth - 30;
+	if (product.pos.y < config.toolBarHeight * 2)
+		product.pos.y = config.toolBarHeight * 2;
+	if (product.pos.y > config.windHeight - config.statusBarHeight - 30)
+		product.pos.y = config.windHeight - config.statusBarHeight - 30;
+
+	fieldProducts.push_back(product);
+}
+
 point Game::getRandomAnimalPosition(int animalWidth, int animalHeight) const
 {
 	static std::random_device rd;
@@ -453,6 +516,7 @@ void Game::Restart()
 	wolvesSpawned = false;
 	wolfSpawnCountdown = 10;
 	grassPatches.clear();
+	fieldProducts.clear();
 
 	if (level == 1)
 		goalTarget = 500;
@@ -460,7 +524,7 @@ void Game::Restart()
 		goalTarget = 500;
 		for (int i = 1; i < level; i++)
 		{
-			goalTarget += 700;
+			goalTarget += 450;
 		}
 	}
 	goalProgress = 0;
@@ -496,7 +560,7 @@ void Game::Restart()
 	//spawnWolves();
 	redrawField();
 	updatestatusbar();
-	printBudget("BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | water: $50 ");
+	printBudget("BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | Food Area: $50 ");
 	printMessage("Game restarted.");
 
 }
@@ -560,6 +624,7 @@ void Game::redrawField() const
 		pWind->DrawString(p.x + animal->getWidth() - xShift, p.y - 25, to_string(displayCounter));
 	}
 
+	drawFieldProducts();
 	drawWarehouse();
 }
 
@@ -624,13 +689,13 @@ void Game::placeFoodArea()
 {
 	if (paused)
 	{
-		printMessage("Resume the game before watering.");
+		printMessage("Resume the game before adding food area.");
 		return;
 	}
 
 	if (!spendBudget(50))
 	{
-		printMessage("Not enough budget for water.");
+		printMessage("Not enough budget for food area.");
 		return;
 	}
 
@@ -653,7 +718,57 @@ void Game::resumeGame()
 
 void Game::saveGame()
 {
-	printMessage("Save clicked.");
+	ofstream saveFile("savegame.txt");
+
+	if (!saveFile)
+	{
+		printMessage("Could not save game.");
+		return;
+	}
+
+	saveFile << "StillEarlyFarmSave 1\n";
+	saveFile << "budget " << budget << "\n";
+	saveFile << "level " << level << "\n";
+	saveFile << "time " << time << "\n";
+	saveFile << "animalcount " << animalcount << "\n";
+	saveFile << "paused " << paused << "\n";
+	saveFile << "eggCount " << eggCount << "\n";
+	saveFile << "milkCount " << milkCount << "\n";
+	saveFile << "warehouseEggCount " << warehouseEggCount << "\n";
+	saveFile << "warehouseMilkCount " << warehouseMilkCount << "\n";
+	saveFile << "goalTarget " << goalTarget << "\n";
+	saveFile << "goalProgress " << goalProgress << "\n";
+	saveFile << "mainWolfVisible " << mainWolfVisible << "\n";
+	saveFile << "wolf " << wolfX << " " << wolfY << " " << wolfVelX << " " << wolfVelY << "\n";
+
+	saveFile << "animals " << animals.size() << "\n";
+	for (Animal* animal : animals)
+	{
+		const string animalType = (animal->getWidth() >= 70) ? "Cow" : "Chick";
+		point animalPosition = animal->getRefPoint();
+		saveFile << animalType << " "
+			<< animalPosition.x << " " << animalPosition.y << " "
+			<< animal->curr_vel.x << " " << animal->curr_vel.y << " "
+			<< animal->getProductionCounter() << "\n";
+	}
+
+	saveFile << "grass " << grassPatches.size() << "\n";
+	for (const GrassData& grass : grassPatches)
+		saveFile << grass.pos.x << " " << grass.pos.y << " " << grass.timeRemaining << "\n";
+
+	saveFile << "fieldProducts " << fieldProducts.size() << "\n";
+	for (const ProductData& product : fieldProducts)
+		saveFile << product.label << " " << product.pos.x << " " << product.pos.y << "\n";
+
+	saveFile << "wolves " << wolves.size() << "\n";
+	for (size_t i = 0; i < wolves.size(); i++)
+	{
+		saveFile << wolves[i].x << " " << wolves[i].y << " "
+			<< wolvesVel[i].x << " " << wolvesVel[i].y << " "
+			<< wolfHitCounts[i] << "\n";
+	}
+
+	printMessage("Game saved to savegame.txt.");
 }
 
 void Game::loadGame()
@@ -663,7 +778,15 @@ void Game::loadGame()
 
 void Game::sellEggProducts()
 {
-    int earnings = warehouseEggCount * eggPrice;
+	sellEggProducts(warehouseEggCount);
+}
+
+void Game::sellEggProducts(int amount)
+{
+	if (amount > warehouseEggCount)
+		amount = warehouseEggCount;
+
+	int earnings = amount * eggPrice;
 
     if (earnings <= 0)
     {
@@ -673,17 +796,25 @@ void Game::sellEggProducts()
 
     budget += earnings;
     goalProgress += earnings;
-    warehouseEggCount = 0;
+    warehouseEggCount -= amount;
     checkLevelGoal();
 
     redrawField();
     printBudget("BUDGET = $" + to_string(budget));
-    printMessage("Eggs sold for $" + to_string(earnings) + ".");
+    printMessage(to_string(amount) + " eggs sold for $" + to_string(earnings) + ".");
 }
 
 void Game::sellMilkProducts()
 {
-    int earnings = warehouseMilkCount * milkPrice;
+	sellMilkProducts(warehouseMilkCount);
+}
+
+void Game::sellMilkProducts(int amount)
+{
+	if (amount > warehouseMilkCount)
+		amount = warehouseMilkCount;
+
+	int earnings = amount * milkPrice;
 
     if (earnings <= 0)
     {
@@ -693,12 +824,12 @@ void Game::sellMilkProducts()
 
     budget += earnings;
     goalProgress += earnings;
-    warehouseMilkCount = 0;
+    warehouseMilkCount -= amount;
     checkLevelGoal();
 
     redrawField();
     printBudget("BUDGET = $" + to_string(budget));
-    printMessage("Milk sold for $" + to_string(earnings) + ".");
+    printMessage(to_string(amount) + " milk sold for $" + to_string(earnings) + ".");
 }
 
 bool Game::isPaused() const
@@ -720,6 +851,54 @@ void Game::registerAnimalProduct(const string& productLabel)
 	}
 }
 
+bool Game::collectFieldProductAt(int x, int y)
+{
+	for (auto it = fieldProducts.begin(); it != fieldProducts.end(); ++it)
+	{
+		if (x >= it->pos.x && x <= it->pos.x + 30 &&
+			y >= it->pos.y && y <= it->pos.y + 30)
+		{
+			registerAnimalProduct(it->label);
+			printMessage(it->label + " collected.");
+			fieldProducts.erase(it);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool Game::isPointInsideCollectAllButton(int x, int y) const
+{
+	return x >= config.windWidth - collectAllButtonWidth && x <= config.windWidth &&
+		y >= 0 && y <= collectAllButtonHeight;
+}
+
+void Game::collectAllFieldProducts()
+{
+	if (fieldProducts.empty())
+	{
+		printMessage("No products to collect.");
+		return;
+	}
+
+	int collectedEggs = 0;
+	int collectedMilk = 0;
+
+	for (const ProductData& product : fieldProducts)
+	{
+		if (product.label == "Egg")
+			collectedEggs++;
+		else if (product.label == "Milk")
+			collectedMilk++;
+
+		registerAnimalProduct(product.label);
+	}
+
+	fieldProducts.clear();
+	printMessage("Collected " + to_string(collectedEggs) + " eggs and " + to_string(collectedMilk) + " milk.");
+}
+
 void Game::updateAnimalProduction(int elapsedSeconds)
 {
 	for (Animal* animal : animals)
@@ -727,17 +906,7 @@ void Game::updateAnimalProduction(int elapsedSeconds)
 		// Tell the animal time has passed. If it returns true, it produced something.
 		if (animal->advanceProduction(elapsedSeconds))
 		{
-			// Check which animal it is and add the product to the Game's inventory
-			if (animal->getProductLabel() == "Egg")
-			{
-				warehouseEggCount++;
-				// Optional: updatestatusbar();
-			}
-			else if (animal->getProductLabel() == "Milk")
-			{
-				warehouseMilkCount++;
-				// Optional: updatestatusbar();
-			}
+			addFieldProduct(animal->getProductLabel(), animal->getRefPoint(), animal->getWidth(), animal->getHeight());
 		}
 	}
 
@@ -829,17 +998,25 @@ bool Game::isPointInsideMilkSellButton(int x, int y) const
 
 void Game::showWarehouseWindow() //starts the function that opens a new warehouse window
 {
-    window* warehouseWindow = new window(430, 240, config.wx + 120, config.wy + 120);
+    window* warehouseWindow = new window(520, 240, config.wx + 120, config.wy + 120);
     warehouseWindow->SetWaitClose(false);
     warehouseWindow->SetBuffering(true);
     warehouseWindow->ChangeTitle("Warehouse Details");
 
+	int selectedEggs = (warehouseEggCount > 0) ? 1 : 0;
+	int selectedMilk = (warehouseMilkCount > 0) ? 1 : 0;
+
     while (warehouseWindow->IsOpen())
     {
+		if (selectedEggs > warehouseEggCount)
+			selectedEggs = warehouseEggCount;
+		if (selectedMilk > warehouseMilkCount)
+			selectedMilk = warehouseMilkCount;
+
 		//draw bkgrnd
         warehouseWindow->SetPen(WHITE, 1);
         warehouseWindow->SetBrush(WHITE);
-        warehouseWindow->DrawRectangle(0, 0, 430, 240);
+        warehouseWindow->DrawRectangle(0, 0, 520, 240);
 		//warehouse header
         warehouseWindow->SetPen(BLACK);
         warehouseWindow->SetFont(22, BOLD, BY_NAME, "Arial");
@@ -849,29 +1026,61 @@ void Game::showWarehouseWindow() //starts the function that opens a new warehous
         warehouseWindow->DrawString(20, 70, "Eggs: " + to_string(warehouseEggCount) + " ($" + to_string(warehouseEggCount * eggPrice) + ")");
         warehouseWindow->DrawString(20, 110, "Milk: " + to_string(warehouseMilkCount) + " ($" + to_string(warehouseMilkCount * milkPrice) + ")");
 		
-        int btnL = 300, btnR = 400;
+        const int minusL = 190, minusR = 220;
+        const int cashL = 230;
+        const int numberL = 325;
+        const int plusL = 355, plusR = 385;
+        const int btnL = 410, btnR = 495;
+        const int eggTop = 65, eggBottom = 95;
+        const int milkTop = 105, milkBottom = 135;
+
         warehouseWindow->SetPen(DARKRED, 2);
         warehouseWindow->SetBrush(WHITE);
-        warehouseWindow->DrawRectangle(btnL, 65, btnR, 95, FILLED, 8, 8);
-        warehouseWindow->DrawRectangle(btnL, 105, btnR, 135, FILLED, 8, 8);
-		//sell button
+        warehouseWindow->DrawRectangle(minusL, eggTop, minusR, eggBottom, FILLED, 8, 8);
+        warehouseWindow->DrawRectangle(plusL, eggTop, plusR, eggBottom, FILLED, 8, 8);
+        warehouseWindow->DrawRectangle(btnL, eggTop, btnR, eggBottom, FILLED, 8, 8);
+
+        warehouseWindow->DrawRectangle(minusL, milkTop, minusR, milkBottom, FILLED, 8, 8);
+        warehouseWindow->DrawRectangle(plusL, milkTop, plusR, milkBottom, FILLED, 8, 8);
+        warehouseWindow->DrawRectangle(btnL, milkTop, btnR, milkBottom, FILLED, 8, 8);
+
+		//quantity controls and sell button
         warehouseWindow->SetFont(16, BOLD, BY_NAME, "Arial");
-        warehouseWindow->DrawString(btnL + 15, 70, "SELL");
-        warehouseWindow->DrawString(btnL + 15, 110, "SELL");
+        warehouseWindow->DrawString(minusL + 10, eggTop + 5, "-");
+        warehouseWindow->DrawString(cashL, eggTop + 5, "$" + to_string(selectedEggs * eggPrice));
+        warehouseWindow->DrawString(numberL, eggTop + 5, to_string(selectedEggs));
+        warehouseWindow->DrawString(plusL + 9, eggTop + 5, "+");
+        warehouseWindow->DrawString(btnL + 15, eggTop + 5, "SELL");
+
+        warehouseWindow->DrawString(minusL + 10, milkTop + 5, "-");
+        warehouseWindow->DrawString(cashL, milkTop + 5, "$" + to_string(selectedMilk * milkPrice));
+        warehouseWindow->DrawString(numberL, milkTop + 5, to_string(selectedMilk));
+        warehouseWindow->DrawString(plusL + 9, milkTop + 5, "+");
+        warehouseWindow->DrawString(btnL + 15, milkTop + 5, "SELL");
         warehouseWindow->UpdateBuffer();
 		//get click area
         int popupX = 0, popupY = 0;
         clicktype popupClick = warehouseWindow->GetMouseClick(popupX, popupY);
 
-        if (popupClick == LEFT_CLICK && popupX >= btnL && popupX <= btnR)
+        if (popupClick == LEFT_CLICK)
         {
-            if (popupY >= 65 && popupY <= 95)
+            if (popupY >= eggTop && popupY <= eggBottom)
             {
-                sellEggProducts();
+				if (popupX >= minusL && popupX <= minusR && selectedEggs > 0)
+					selectedEggs--;
+				else if (popupX >= plusL && popupX <= plusR && selectedEggs < warehouseEggCount)
+					selectedEggs++;
+				else if (popupX >= btnL && popupX <= btnR)
+					sellEggProducts(selectedEggs);
             }
-            else if (popupY >= 105 && popupY <= 135)
+            else if (popupY >= milkTop && popupY <= milkBottom)
             {
-                sellMilkProducts();
+				if (popupX >= minusL && popupX <= minusR && selectedMilk > 0)
+					selectedMilk--;
+				else if (popupX >= plusL && popupX <= plusR && selectedMilk < warehouseMilkCount)
+					selectedMilk++;
+				else if (popupX >= btnL && popupX <= btnR)
+					sellMilkProducts(selectedMilk);
             }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -885,7 +1094,7 @@ void Game::advanceLevel() // starts the level up function
 	level++;
 	gametimer(level); //recalculates the timer for the new level
 	goalProgress = 0; //resets the current level goal progress
-	goalTarget += 700; //increases the next goal target after leveling up
+	goalTarget += 450; //increases the next goal target after leveling up
 	
 	mainWolfVisible = false; //makes the main wolf visible again for the new level
 	wolvesSpawned = false;
@@ -936,6 +1145,9 @@ void Game::updateStatusMessageTimer()
 
 void Game::handlePlayAreaClick(int x, int y)
 {
+	if (collectFieldProductAt(x, y))
+		return;
+
 	if (isPointInsideEggSellButton(x, y))
 	{
 		sellEggProducts();
@@ -1072,10 +1284,11 @@ void Game::go()
 
 		string budget_string_code = "BUDGET = $" + to_string(budget);
 		string budget_string = "BUDGET: $" + to_string(budget);
-		string prices = " | Chick: $100 | Cow: $200 | water: $50 ";
+		string prices = " | Chick: $100 | Cow: $200 | Food Area: $50 ";
 		printBudget(budget_string + prices); //printBudget bar
 
 		gameToolbar->draw();
+		drawCollectAllButton();
 		gameBudgetbar->draw();
 		drawfieldboundary();
 		updatestatusbar();
@@ -1119,7 +1332,10 @@ void Game::go()
 			//[1] If user clicks on the Toolbar
 		if (click == LEFT_CLICK && y >= 0 && y < config.toolBarHeight)
 		{
-			isExit = gameToolbar->handleClick(x, y);
+			if (isPointInsideCollectAllButton(x, y))
+				collectAllFieldProducts();
+			else
+				isExit = gameToolbar->handleClick(x, y);
 		}
 		else if (click == LEFT_CLICK && y >= config.toolBarHeight && y < 2 * config.toolBarHeight)
 		{
@@ -1254,5 +1470,6 @@ void Game::updatePlayArea()
 		pWind->DrawString(p.x + animal->getWidth() - xShift, p.y - 25, to_string(displayCounter));
 	}
 
+	drawFieldProducts();
 	drawWarehouse();
 }
