@@ -15,21 +15,21 @@ enum AnimalType
 class Game
 {
 private:
-	window* pWind;	//Pointer to the CMU graphics window
+	window* pWind;
 	Toolbar* gameToolbar;
 	Budgetbar* gameBudgetbar;
-	std::vector<point> wolvesVel;   //Tracks the velocity for each extra wolf
+	std::vector<point> wolvesVel;
 	std::vector<Animal*> animals;
 	std::vector<point> wolves;
-	std::vector<int> wolfHitCounts; //Each extra wolf gets its own number, so every wolf can be killed separately after 5 clicks
+	std::vector<int> wolfHitCounts;
 
-	struct GrassData 
+	struct GrassData
 	{
 		point pos;
-		int timeRemaining; // Tracks seconds until the grass disappears
+		int timeRemaining;
 	};
 
-	std::vector<GrassData> grassPatches; // Stores the coordinates of all spawned grass
+	std::vector<GrassData> grassPatches;
 
 	struct ProductData
 	{
@@ -45,27 +45,25 @@ private:
 
 	int warehouseEggCount;
 	int warehouseMilkCount;
-	int goalTarget; // stores how many total warehouse items are needed for the next level.
-	int goalProgress; // stores progress for the current level only.
-	bool mainWolfVisible; //remembers whether the main wolf should still be drawn.
-	int consecutiveWolfClicks; //counts how many correct wolf clicks happened in a row.
-	mutable string statusMessage; // string that stores the latest temporary message this is used for messages like Wolf hits and Level increased
-	mutable int statusMessageTimer; //a timer that decides how long that temporary message stays visible
+	int goalTarget;
+	int goalProgress;
+	bool mainWolfVisible;
+	int consecutiveWolfClicks;
+	mutable string statusMessage;
+	mutable int statusMessageTimer;
 
-	bool wolvesSpawned; //acts as a switch ensuring we only trigger the spawn once per level
-	int wolfSpawnCountdown; //tracks the remaining seconds until the spawn event
+	bool wolvesSpawned;
+	int wolfSpawnCountdown;
 	
 	struct DeadWolf
 	{
-		bool isMain;          // true = main wolf, false = clone
-		int respawnCountdown; // seconds remaining until respawn
+		bool isMain;
+		int respawnCountdown;
 	};
 	std::vector<DeadWolf> deadWolves;
-	void tickWolfRespawns(); // counts down timers and respawns dead wolves
+	void tickWolfRespawns();
 
 	bool isAreaOccupiedByAnimal(int x, int y, int width, int height) const;
-	// Checks if any animal is currently inside the given rectangle coordinates to avoid wolves spawning on top of animals.
-
 	void clearPlayingArea() const;
 	void drawFieldBackground() const;
 	void drawWolf() const;
@@ -78,17 +76,17 @@ private:
 	bool isPointInsideCollectAllButton(int x, int y) const;
 	void sellEggProducts(int amount);
 	void sellMilkProducts(int amount);
-	bool isPointInsidePrimaryWolf(int x, int y) const; //checks whether a click landed on the main wolf.
-	bool isPointInsideExtraWolf(int index, int x, int y) const; //checks whether the player clicked one of the extra wolves
-	bool isPointInsideWarehouse(int x, int y) const; //checks whether a click landed on the warehouse.
+	bool isPointInsidePrimaryWolf(int x, int y) const;
+	bool isPointInsideExtraWolf(int index, int x, int y) const;
+	bool isPointInsideWarehouse(int x, int y) const;
 	bool isPointInsideEggSellButton(int x, int y) const;
 	bool isPointInsideMilkSellButton(int x, int y) const;
-	void showWarehouseWindow() ;//window for warehouse details.
+	void showWarehouseWindow();
 	void handlePlayAreaClick(int x, int y);
-	void checkLevelGoal();// checks whether the goal has been reached.
-	void advanceLevel(); //increases the level and refreshes level-related state.
-	void resetWolfHitCounters(int clickedWolfIndex); //resets the click counters of wolves you are not currently hitting
-	void updateStatusMessageTimer(); //counts down the temporary message timer every game loop
+	void checkLevelGoal();
+	void advanceLevel();
+	void resetWolfHitCounters(int clickedWolfIndex);
+	void updateStatusMessageTimer();
 
 public:
 	int budget = 2500;
@@ -96,7 +94,6 @@ public:
 	int time = 150;
 	int animalcount = 0;
 
-	string wolfImagePath;
 	mutable int wolfX;
 	mutable int wolfY;
 	mutable int wolfVelX;
@@ -117,24 +114,20 @@ public:
 	void updatePlayArea();
 	void updateAnimalProduction(int elapsedSeconds);
 
-	clicktype getMouseClick(int& x, int& y) const; //Get coordinate where user clicks and returns click type (left/right)
-	string getSrting() const;	 //Returns a string entered by the user
-
-
-	window* CreateWind(int, int, int, int) const; //creates the game window
+	clicktype getMouseClick(int& x, int& y) const;
+	string getSrting() const;
+	window* CreateWind(int, int, int, int) const;
 	void createToolbar();
 	void createBudgetbar();
 	void clearBudget() const;
 	void printBudget(string msg) const;
-	void clearStatusBar() const;	//Clears the status bar
-	void updatestatusbar() const; //refresh the status bar continously
-	void drawfieldboundary() const; //to set the field boundary
+	void clearStatusBar() const;
+	void updatestatusbar() const;
+	void drawfieldboundary() const;
 	void Restart();
-	void printMessage(string msg) const;	//Print a message on Status bar
+	void printMessage(string msg) const;
 	void spawnWolves();
-
 	void go();
-
 	void redrawField() const;
 	bool canAfford(int amount) const;
 	bool spendBudget(int amount);
@@ -149,8 +142,6 @@ public:
 	void sellMilkProducts();
 	bool isPaused() const;
 	void registerAnimalProduct(const string& productLabel);
-
-
-	window* getWind() const;		//returns a pointer to the graphics window
+	window* getWind() const;
 };
 
