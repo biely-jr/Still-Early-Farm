@@ -1,30 +1,23 @@
 #pragma once
 #include "../CMUgraphicsLib/CMUgraphics.h"
 
-__declspec(selectany) //This line to prevent "redefinition error"
-
-struct  //contains all game configurations (MAY be loaded from a configuration file later)
+__declspec(selectany) // Keeps the shared config object from being defined twice.
+struct
 {
-	int	windWidth = 1500, windHeight = 800,	//Window width and height
-		wx = 5, wy = 5,			//Window starting coordinates
+	int	windWidth = 1500, windHeight = 800,
+		wx = 5, wy = 5,
 
-		//The window is divded into 3 areas: toolbar, playing area, statusbar
-		toolBarHeight = 50,		//Tool Bar Height (distance from top of window to bottom line of toolbar)
-		toolbarItemWidth = 40,			//Width of each icon in toolbar
-		statusBarHeight = 50;	//Status Bar Height
+		toolBarHeight = 50,
+		toolbarItemWidth = 40,
+		statusBarHeight = 50;
 
-	// Remaining Height 
 	int playingAreaHeight = windHeight - toolBarHeight - statusBarHeight;
 
-	color	penColor = BLUE,			//color used to draw lines/write messages
-		bkGrndColor = POWDERBLUE,		//Background color
-		statusBarColor = BLACK;	//background color of the status
-	int penWidth = 3;			//width of the pen that draws shapes
+	color	penColor = BLUE,
+		bkGrndColor = POWDERBLUE,
+		statusBarColor = BLACK;
+	int penWidth = 3;
 
-	int	iconWidth = 70;			//Width of each icon in toolbar 
+	int	iconWidth = 70;
 } config;
-
-
-
-
 
