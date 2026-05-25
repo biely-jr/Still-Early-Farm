@@ -1,4 +1,3 @@
-#include <iostream>
 #include "Game.h"
 #include "../Config/GameConfig.h"
 #include <thread>
@@ -6,7 +5,6 @@
 #include "../Entities/Animal.h"
 #include <random>
 #include <fstream>
-#include <mmsystem.h>
 
 namespace
 {
@@ -28,43 +26,34 @@ namespace
 	const int eggSellButtonBottom = 382;
 	const int milkSellButtonTop = 397;
 	const int milkSellButtonBottom = 427;
-	const string musicAlias = "farm_bgm";
-	const string musicPathFromProject = "audio\\videoplayback.mp3";
-	const string musicPathFromDebug = "..\\audio\\videoplayback.mp3";
-
-	// -------------------------------------------------------
-	// Warehouse boundary constants (must match drawWarehouse)
-	// -------------------------------------------------------
 	const int WAREHOUSE_X = 1250;
 	const int WAREHOUSE_Y = 550;
 	const int WAREHOUSE_W = 220;
 	const int WAREHOUSE_H = 180;
 
-	string getExistingMusicPath()
+	string buildBudgetText(int budget)
 	{
-		if (GetFileAttributesA(musicPathFromProject.c_str()) != INVALID_FILE_ATTRIBUTES)
-			return musicPathFromProject;
-		if (GetFileAttributesA(musicPathFromDebug.c_str()) != INVALID_FILE_ATTRIBUTES)
-			return musicPathFromDebug;
-		return "";
+		return "BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | Food Area: $50 ";
 	}
 
-	void startBackgroundMusic()
+	void drawAnimalNumbers(window* pWind, const vector<Animal*>& animals)
 	{
-		string musicPath = getExistingMusicPath();
-		if (musicPath.empty())
-			return;
+		int chickCounter = 1;
+		int cowCounter = 1;
 
-		mciSendStringA(("close " + musicAlias).c_str(), NULL, 0, NULL);
-		string openCommand = "open \"" + musicPath + "\" type mpegvideo alias " + musicAlias;
-		if (mciSendStringA(openCommand.c_str(), NULL, 0, NULL) == 0)
-			mciSendStringA(("play " + musicAlias + " repeat").c_str(), NULL, 0, NULL);
-	}
+		for (Animal* animal : animals)
+		{
+			animal->draw();
 
-	void stopBackgroundMusic()
-	{
-		mciSendStringA(("stop " + musicAlias).c_str(), NULL, 0, NULL);
-		mciSendStringA(("close " + musicAlias).c_str(), NULL, 0, NULL);
+			pWind->SetPen(BLACK, 2);
+			pWind->SetFont(16, BOLD, BY_NAME, "Arial");
+			point p = animal->getRefPoint();
+
+			if (animal->getWidth() >= 70)
+				pWind->DrawString(p.x + animal->getWidth() - 30, p.y - 25, to_string(cowCounter++));
+			else
+				pWind->DrawString(p.x + animal->getWidth() - 15, p.y - 25, to_string(chickCounter++));
+		}
 	}
 }
 
@@ -83,58 +72,33 @@ Game::Game()
 	statusMessage(""),
 	statusMessageTimer(0)
 {
-	//1 - Create the main window
 	pWind = CreateWind(config.windWidth, config.windHeight, config.wx, config.wy);
-	startBackgroundMusic();
-
-	//2 - create and draw the toolbar
 	createToolbar();
 	createBudgetbar();
-
-	//3 - create and draw the backgroundPlayingArea
-
-	//4- Create the Plane
-	//TODO: Add code to create and draw the Plane
-
-	//5- Create the Bullet
-	//TODO: Add code to create and draw the Bullet
-
-	//6- Create the enemies
-	//TODO: Add code to create and draw enemies in random places
-	wolfImagePath = "images\\Wolf.jpg";
 	wolfX = 835;
 	wolfY = 205;
 	wolfVelX = 1;
 	wolfVelY = 1;
-
-	//7- Create and clear the status bar
 	gametimer(level);
 	updatestatusbar();
 	drawfieldboundary();
 	clearStatusBar();
-	//spawnWolves();
 	clearStatusBar();
 	redrawField();
-
 }
 
 Game::~Game()
 {
-	stopBackgroundMusic();
-
 	for (Animal* animal : animals)
 		delete animal;
 
 	delete gameToolbar;
 	delete gameBudgetbar;
 	delete pWind;
-
 }
 
 clicktype Game::getMouseClick(int& x, int& y) const
 {
-	// GetMouseClick is non-blocking. It checks if the mouse was clicked right now.
-	// If yes, it updates x and y. If not, it returns NO_CLICK and lets the code continue.
 	return pWind->GetMouseClick(x, y);
 }
 
@@ -147,11 +111,11 @@ string Game::getSrting() const
 	while (1)
 	{
 		ktype = pWind->WaitKeyPress(Key);
-		if (ktype == ESCAPE)	//ESCAPE key is pressed
-			return "";	//returns nothing as user has cancelled label
-		if (Key == 13)	//ENTER key is pressed
+		if (ktype == ESCAPE)
+			return "";
+		if (Key == 13)
 			return Label;
-		if (Key == 8)	//BackSpace is pressed
+		if (Key == 8)
 			if (Label.size() > 0)
 				Label.resize(Label.size() - 1);
 			else
@@ -196,7 +160,6 @@ void Game::createBudgetbar()
 
 void Game::clearBudget() const
 {
-	//Clear Status bar by drawing a filled rectangle
 	pWind->SetPen(config.bkGrndColor, 1);
 	pWind->SetBrush(config.bkGrndColor);
 	pWind->DrawRectangle(config.windWidth - 500, config.toolBarHeight, config.windWidth, 2 * config.toolBarHeight);
@@ -204,8 +167,7 @@ void Game::clearBudget() const
 
 void Game::printBudget(string msg) const
 {
-	clearBudget();	//First clear the status bar
-
+	clearBudget();
 	pWind->SetPen(config.penColor, 50);
 	pWind->SetFont(24, BOLD, BY_NAME, "Arial");
 	pWind->DrawString(config.windWidth - 575, config.toolBarHeight + 10, msg);
@@ -213,10 +175,8 @@ void Game::printBudget(string msg) const
 
 void Game::clearStatusBar() const
 {
-	//Clear Status bar by drawing a filled rectangle
 	pWind->SetPen(config.statusBarColor, 1);
 	pWind->SetBrush(config.statusBarColor);
-	//DrawRectangle(X1,Y1,X2,Y2)
 	pWind->DrawRectangle(0, config.windHeight - config.statusBarHeight, config.windWidth, config.windHeight);
 }
 
@@ -224,7 +184,7 @@ void Game::updatestatusbar() const
 {
 	clearStatusBar();
 	string status = "Level: " + to_string(level) + " | Timer: " + to_string(time) + " | Animals: " + to_string(animalcount) + " | Goal: " + to_string(goalProgress) + "/" + to_string(goalTarget);
-	if (statusMessageTimer > 0 && !statusMessage.empty()) // checks whether a temporary message should still be shown
+	if (statusMessageTimer > 0 && !statusMessage.empty())
 		status += " | " + statusMessage;
 	pWind->SetPen(config.penColor);
 	pWind->SetFont(20, BOLD, BY_NAME, "Arial");
@@ -251,17 +211,14 @@ void Game::drawFieldBackground() const
 	pWind->DrawImage(backgroundImagePath, 0, playTop, config.windWidth, playBottom - playTop);
 }
 
-// Adds a new grass patch to the list
 void Game::addGrassPatch(point p)
 {
 	GrassData newGrass;
 	newGrass.pos = p;
-	newGrass.timeRemaining = 30; // Set lifespan to 30 seconds
-
+	newGrass.timeRemaining = 30;
 	grassPatches.push_back(newGrass);
 }
 
-// Draws all grass patches on the screen
 void Game::drawGrass() const
 {
 	for (const GrassData& grass : grassPatches)
@@ -272,7 +229,6 @@ void Game::drawGrass() const
 	}
 }
 
-// Checks if an animal's bounding box intersects with any grass patch
 bool Game::isStandingOnGrass(point p, int w, int h) const
 {
 	for (const GrassData& grass : grassPatches)
@@ -289,8 +245,8 @@ bool Game::isStandingOnGrass(point p, int w, int h) const
 void Game::spawnWolves()
 {
 	wolves.clear();
-	wolfHitCounts.clear(); //When new wolves are spawned, it clears the old hit counters too, so the vector stays in sync with the wolves vector
-	wolvesVel.clear(); //Clear the velocity vector
+	wolfHitCounts.clear();
+	wolvesVel.clear();
 
 	int wolvesToSpawn = level - 1;
 	int minX = 50;
@@ -304,7 +260,6 @@ void Game::spawnWolves()
 		int randX, randY;
 		bool safe = false;
 
-		// Keep trying new positions until a safe one is found
 		while (!safe)
 		{
 			randX = minX + (rand() % (maxX - minX));
@@ -318,11 +273,11 @@ void Game::spawnWolves()
 		wolves.push_back(wolfPosition);
 		wolfHitCounts.push_back(0);
 
-		// Give the new wolf a random initial velocity direction
 		point vel;
 		vel.x = (rand() % 3) - 1;
 		vel.y = (rand() % 3) - 1;
-		if (vel.x == 0 && vel.y == 0) vel.x = 1; // Ensure it's not standing still
+		if (vel.x == 0 && vel.y == 0)
+			vel.x = 1;
 		wolvesVel.push_back(vel);
 	}
 
@@ -385,23 +340,20 @@ bool Game::isAreaOccupiedByAnimal(int x, int y, int width, int height) const
 		int w = animal->getWidth();
 		int h = animal->getHeight();
 
-		// Check if the wolf's rectangle overlaps with the animal's rectangle
 		if (x < p.x + w && x + width > p.x &&
 			y < p.y + h && y + height > p.y)
 		{
-			return true; // Collision found
+			return true;
 		}
 	}
-	return false; // Area is clear
+	return false;
 }
 
 void Game::drawWolf() const
 {
-	// 1. Draw primary moving wolf
 	if (mainWolfVisible)
-		pWind->DrawImage(Game::wolfImagePath, wolfX, wolfY, 80, 80);
+		pWind->DrawImage(::wolfImagePath, wolfX, wolfY, 80, 80);
 
-	// 2. Draw every spawned wolf from the vector
 	for (size_t i = 0; i < wolves.size(); i++)
 	{
 		pWind->DrawImage(::wolfImagePath, wolves[i].x, wolves[i].y, 70, 70);
@@ -410,21 +362,15 @@ void Game::drawWolf() const
 
 void Game::moveWolf()
 {
-	int speed = 4 + 2 * sqrt(level);
+	int speed = static_cast<int>(4 + 2 * sqrt(level));
 
-	// -------------------------------------------------------
-	// Helper: bounce a rectangle off the warehouse
-	// wolfSz = the wolf's width/height (square wolves)
-	// posX/posY = wolf position (top-left corner)
-	// velX/velY = wolf velocity components
-	// -------------------------------------------------------
 	auto bounceOffWarehouse = [](int wolfSz, int& posX, int& posY, int& velX, int& velY)
 		{
 			bool overlapX = (posX + wolfSz > WAREHOUSE_X) && (posX < WAREHOUSE_X + WAREHOUSE_W);
 			bool overlapY = (posY + wolfSz > WAREHOUSE_Y) && (posY < WAREHOUSE_Y + WAREHOUSE_H);
 
 			if (!overlapX || !overlapY)
-				return; // no collision
+				return;
 
 			int penLeft = (posX + wolfSz) - WAREHOUSE_X;
 			int penRight = (WAREHOUSE_X + WAREHOUSE_W) - posX;
@@ -436,63 +382,51 @@ void Game::moveWolf()
 
 			if (minPenX < minPenY)
 			{
-				// Push out horizontally
 				if (penLeft < penRight) posX = WAREHOUSE_X - wolfSz;
 				else                    posX = WAREHOUSE_X + WAREHOUSE_W;
 				velX = -velX;
 			}
 			else
 			{
-				// Push out vertically
 				if (penTop < penBottom) posY = WAREHOUSE_Y - wolfSz;
 				else                    posY = WAREHOUSE_Y + WAREHOUSE_H;
 				velY = -velY;
 			}
 		};
 
-	// 1. Move extra spawned wolves
 	for (size_t i = 0; i < wolves.size(); i++)
 	{
-		// 5% chance to change direction naturally (like the cow)
 		if (rand() % 100 < 5) {
 			wolvesVel[i].x = (rand() % 3) - 1;
 			wolvesVel[i].y = (rand() % 3) - 1;
 		}
 
-		// Apply smooth continuous movement using the velocity multiplied by level speed
 		wolves[i].x += wolvesVel[i].x * speed;
 		wolves[i].y += wolvesVel[i].y * speed;
 
-		// Field boundary checks and bouncing for extra wolves
 		if (wolves[i].x < 0) { wolves[i].x = 0; wolvesVel[i].x = 1; }
 		if (wolves[i].x > config.windWidth - 70) { wolves[i].x = config.windWidth - 70; wolvesVel[i].x = -1; }
 		if (wolves[i].y < config.toolBarHeight * 2) { wolves[i].y = config.toolBarHeight * 2; wolvesVel[i].y = 1; }
 		if (wolves[i].y > config.windHeight - config.statusBarHeight - 70) { wolves[i].y = config.windHeight - config.statusBarHeight - 70; wolvesVel[i].y = -1; }
 
-		// Warehouse boundary bounce for extra wolves (size 70x70)
 		bounceOffWarehouse(70, wolves[i].x, wolves[i].y, wolvesVel[i].x, wolvesVel[i].y);
 	}
 
-	// 2. Move primary wolf if visible
 	if (mainWolfVisible)
 	{
-		// 10% chance to change direction naturally
 		if (rand() % 100 < 10) {
 			wolfVelX = (rand() % 3) - 1;
 			wolfVelY = (rand() % 3) - 1;
 		}
 
-		// Apply smooth continuous movement
 		wolfX += wolfVelX * speed;
 		wolfY += wolfVelY * speed;
 
-		// Field boundary checks and bouncing for primary wolf
 		if (wolfX < 0) { wolfX = 0; wolfVelX = 1; }
 		if (wolfX > config.windWidth - 80) { wolfX = config.windWidth - 80; wolfVelX = -1; }
 		if (wolfY < config.toolBarHeight * 2) { wolfY = config.toolBarHeight * 2; wolfVelY = 1; }
 		if (wolfY > config.windHeight - config.statusBarHeight - 80) { wolfY = config.windHeight - config.statusBarHeight - 80; wolfVelY = -1; }
 
-		// Warehouse boundary bounce for primary wolf (size 80x80)
 		bounceOffWarehouse(80, wolfX, wolfY, wolfVelX, wolfVelY);
 	}
 }
@@ -556,14 +490,14 @@ point Game::getRandomAnimalPosition(int animalWidth, int animalHeight) const
 
 void Game::Restart()
 {
-	cout << "Restart button clicked" << endl;
-	// 1. Reset budget
-	paused = false; //Prevents pausing when restarting from a "Game Over"
+	paused = false;
 	budget = 2500;
 	animalcount = 0;
 	wolvesVel.clear();
 	mainWolfVisible = false;
 	wolves.clear();
+	wolfHitCounts.clear();
+	deadWolves.clear();
 	consecutiveWolfClicks = 0;
 	wolvesSpawned = false;
 	wolfSpawnCountdown = 10;
@@ -582,7 +516,7 @@ void Game::Restart()
 	goalProgress = 0;
 	statusMessage = "";
 	statusMessageTimer = 0;
-	gametimer(level);		 // Resets the timer based on the level
+	gametimer(level);
 	eggCount = 0;
 	milkCount = 0;
 	warehouseEggCount = 0;
@@ -592,29 +526,21 @@ void Game::Restart()
 		delete animal;
 	animals.clear();
 
-	// 2. Clear the entire window, basically erases the set window and makes a new one
-	// How it works : it is used in drawing a giant rectangle that covers the initial gameplay
 	pWind->SetPen(config.bkGrndColor, 1);
 	pWind->SetBrush(config.bkGrndColor);
 	pWind->DrawRectangle(0, 0, config.windWidth, config.windHeight);
 
-	// 3. Delete old UI elements, deletes their pointers to prevent memory leaks
 	delete gameToolbar;
 	delete gameBudgetbar;
 
-	// 4. Recreate UI (toolbar + budget bar)
 	createToolbar();
 	createBudgetbar();
 
-	// 5. Clear status bar
 	clearStatusBar();
-
-	//spawnWolves();
 	redrawField();
 	updatestatusbar();
-	printBudget("BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | Food Area: $50 ");
+	printBudget(buildBudgetText(budget));
 	printMessage("Game restarted.");
-
 }
 
 void Game::printMessage(string msg) const
@@ -644,38 +570,8 @@ void Game::redrawField() const
 	drawFieldBackground();
 	drawfieldboundary();
 	drawGrass();
-
 	drawWolf();
-
-	int chickCounter = 1;
-	int cowCounter = 1;
-
-	for (Animal* animal : animals)
-	{
-		animal->draw();
-
-		pWind->SetPen(BLACK, 2);
-		pWind->SetFont(16, BOLD, BY_NAME, "Arial");
-		point p = animal->getRefPoint();
-
-		int xShift = 15;
-		int displayCounter = 1;
-
-		// If width >= 70, it's a Cow. Otherwise, it's a Chick.
-		if (animal->getWidth() >= 70)
-		{
-			xShift = 30;
-			displayCounter = cowCounter++; // Use and increment cow counter
-		}
-		else
-		{
-			xShift = 15;
-			displayCounter = chickCounter++; // Use and increment chick counter
-		}
-
-		pWind->DrawString(p.x + animal->getWidth() - xShift, p.y - 25, to_string(displayCounter));
-	}
-
+	drawAnimalNumbers(pWind, animals);
 	drawFieldProducts();
 	drawWarehouse();
 }
@@ -733,8 +629,8 @@ void Game::placeAnimal(AnimalType animalType)
 	animalcount++;
 	updatestatusbar();
 	redrawField();
-	printBudget("BUDGET = $" + to_string(budget));
-	printMessage(animalName + " added. Cost = $" + to_string(animalCost));
+	printBudget(buildBudgetText(budget));
+	printMessage(animalName + " added. Cost: $" + to_string(animalCost) + ".");
 }
 
 void Game::placeFoodArea()
@@ -752,7 +648,7 @@ void Game::placeFoodArea()
 	}
 
 	redrawField();
-	printBudget("BUDGET = $" + to_string(budget));
+	printBudget(buildBudgetText(budget));
 	printMessage("Food area added. Cost = $50.");
 }
 
@@ -833,7 +729,6 @@ void Game::loadGame()
 		return;
 	}
 
-	// ---- Step 1: Validate header ----
 	string header, version;
 	saveFile >> header >> version;
 	if (header != "StillEarlyFarmSave")
@@ -842,7 +737,6 @@ void Game::loadGame()
 		return;
 	}
 
-	// ---- Step 2: Read all scalar fields ----
 	string key;
 	int  tempBudget, tempLevel, tempTime, tempAnimalcount;
 	bool tempPaused;
@@ -866,9 +760,8 @@ void Game::loadGame()
 	saveFile >> key >> tempMainWolfVisible;
 	saveFile >> key >> tempWolfX >> tempWolfY >> tempWolfVelX >> tempWolfVelY;
 
-	// ---- Step 3: Read animals ----
 	int animalCount;
-	saveFile >> key >> animalCount; // reads "animals <N>"
+	saveFile >> key >> animalCount;
 
 	vector<Animal*> loadedAnimals;
 	for (int i = 0; i < animalCount; i++)
@@ -887,13 +780,12 @@ void Game::loadGame()
 
 		a->curr_vel.x = avx;
 		a->curr_vel.y = avy;
-		a->addProductionTime(aprod); // restores the saved production timer
+		a->addProductionTime(aprod);
 		loadedAnimals.push_back(a);
 	}
 
-	// ---- Step 4: Read grass patches ----
 	int grassCount;
-	saveFile >> key >> grassCount; // reads "grass <N>"
+	saveFile >> key >> grassCount;
 
 	vector<GrassData> loadedGrass;
 	for (int i = 0; i < grassCount; i++)
@@ -903,9 +795,8 @@ void Game::loadGame()
 		loadedGrass.push_back(g);
 	}
 
-	// ---- Step 5: Read field products ----
 	int productCount;
-	saveFile >> key >> productCount; // reads "fieldProducts <N>"
+	saveFile >> key >> productCount;
 
 	vector<ProductData> loadedProducts;
 	for (int i = 0; i < productCount; i++)
@@ -915,9 +806,8 @@ void Game::loadGame()
 		loadedProducts.push_back(p);
 	}
 
-	// ---- Step 6: Read wolves ----
 	int wolfCount;
-	saveFile >> key >> wolfCount; // reads "wolves <N>"
+	saveFile >> key >> wolfCount;
 
 	vector<point> loadedWolves;
 	vector<point> loadedWolvesVel;
@@ -933,19 +823,15 @@ void Game::loadGame()
 		loadedWolfHitCounts.push_back(hits);
 	}
 
-	// ---- All data read. Now apply everything atomically. ----
-
-	// Step 7: Destroy current animals
 	for (Animal* a : animals)
 		delete a;
 	animals.clear();
 
-	// Step 8: Apply scalars
 	budget = tempBudget;
 	level = tempLevel;
 	time = tempTime;
 	animalcount = tempAnimalcount;
-	paused = false;              // always resume on load
+	paused = false;
 	eggCount = tempEggCount;
 	milkCount = tempMilkCount;
 	warehouseEggCount = tempWarehouseEggCount;
@@ -958,7 +844,6 @@ void Game::loadGame()
 	wolfVelX = tempWolfVelX;
 	wolfVelY = tempWolfVelY;
 
-	// Step 9: Apply collections
 	animals = loadedAnimals;
 	grassPatches = loadedGrass;
 	fieldProducts = loadedProducts;
@@ -966,30 +851,26 @@ void Game::loadGame()
 	wolvesVel = loadedWolvesVel;
 	wolfHitCounts = loadedWolfHitCounts;
 
-	// Step 10: Reset transient state that is never saved
 	consecutiveWolfClicks = 0;
 	statusMessage = "";
 	statusMessageTimer = 0;
 	deadWolves.clear();
 
-	// If the save had wolves on screen, they had already spawned
 	wolvesSpawned = (mainWolfVisible || !wolves.empty());
 	wolfSpawnCountdown = wolvesSpawned ? 0 : 10;
 
-	// Step 11: Rebuild UI bars
 	delete gameToolbar;
 	delete gameBudgetbar;
 	createToolbar();
 	createBudgetbar();
 
-	// Step 12: Redraw everything from scratch
 	pWind->SetPen(config.bkGrndColor, 1);
 	pWind->SetBrush(config.bkGrndColor);
 	pWind->DrawRectangle(0, 0, config.windWidth, config.windHeight);
 
 	redrawField();
 	updatestatusbar();
-	printBudget("BUDGET: $" + to_string(budget) + " | Chick: $100 | Cow: $200 | Food Area: $50 ");
+	printBudget(buildBudgetText(budget));
 	printMessage("Game loaded successfully.");
 }
 
@@ -1017,7 +898,7 @@ void Game::sellEggProducts(int amount)
 	checkLevelGoal();
 
 	redrawField();
-	printBudget("BUDGET = $" + to_string(budget));
+	printBudget(buildBudgetText(budget));
 	printMessage(to_string(amount) + " eggs sold for $" + to_string(earnings) + ".");
 }
 
@@ -1045,7 +926,7 @@ void Game::sellMilkProducts(int amount)
 	checkLevelGoal();
 
 	redrawField();
-	printBudget("BUDGET = $" + to_string(budget));
+	printBudget(buildBudgetText(budget));
 	printMessage(to_string(amount) + " milk sold for $" + to_string(earnings) + ".");
 }
 
@@ -1120,18 +1001,15 @@ void Game::updateAnimalProduction(int elapsedSeconds)
 {
 	for (Animal* animal : animals)
 	{
-		// Tell the animal time has passed. If it returns true, it produced something.
 		if (animal->advanceProduction(elapsedSeconds))
 		{
 			addFieldProduct(animal->getProductLabel(), animal->getRefPoint(), animal->getWidth(), animal->getHeight());
 		}
 	}
 
-	// Base countdown: tick every grass patch down by 1 each second
 	for (GrassData& grass : grassPatches)
-		grass.timeRemaining--;
+		grass.timeRemaining -= elapsedSeconds;
 
-	// Grass-animal interaction: animal on grass gets +1, that patch loses 1 extra
 	for (Animal* animal : animals)
 	{
 		point p = animal->getRefPoint();
@@ -1143,13 +1021,12 @@ void Game::updateAnimalProduction(int elapsedSeconds)
 			if (p.x < grass.pos.x + 40 && p.x + w > grass.pos.x &&
 				p.y < grass.pos.y + 40 && p.y + h > grass.pos.y)
 			{
-				animal->addProductionTime(2); // animal earns +1 extra production second
-				grass.timeRemaining -= 2;        // this patch loses 1 extra second
+				animal->addProductionTime(2);
+				grass.timeRemaining -= 2;
 			}
 		}
 	}
 
-	// Remove expired patches
 	for (auto it = grassPatches.begin(); it != grassPatches.end(); )
 	{
 		if (it->timeRemaining <= 0)
@@ -1163,9 +1040,9 @@ void Game::collectEggs()
 {
 	if (eggCount > 0) {
 		warehouseEggCount += eggCount;
-		eggCount = 0; // Remove from the icon bar
-		checkLevelGoal(); //hecks for a level up right after eggs are moved into the warehouse
-		updatestatusbar(); // Refresh UI if necessary
+		eggCount = 0;
+		checkLevelGoal();
+		updatestatusbar();
 	}
 }
 
@@ -1173,17 +1050,17 @@ void Game::collectMilk()
 {
 	if (milkCount > 0) {
 		warehouseMilkCount += milkCount;
-		milkCount = 0; // Remove from the icon bar
-		checkLevelGoal(); //checks for a level-up right after milk is moved into the warehouse
-		updatestatusbar(); // Refresh UI if necessary
+		milkCount = 0;
+		checkLevelGoal();
+		updatestatusbar();
 	}
 }
 
-bool Game::isPointInsidePrimaryWolf(int x, int y) const //tests wolf click bounds
+bool Game::isPointInsidePrimaryWolf(int x, int y) const
 {
-	return mainWolfVisible && //requires the wolf to be visible before it can be clicked
-		x >= wolfX && x <= wolfX + 80 && // checks the click's horizontal range against the wolf image
-		y >= wolfY && y <= wolfY + 80; //checks the click's vertical range against the wolf image
+	return mainWolfVisible &&
+		x >= wolfX && x <= wolfX + 80 &&
+		y >= wolfY && y <= wolfY + 80;
 }
 
 bool Game::isPointInsideExtraWolf(int index, int x, int y) const
@@ -1197,8 +1074,8 @@ bool Game::isPointInsideExtraWolf(int index, int x, int y) const
 
 bool Game::isPointInsideWarehouse(int x, int y) const
 {
-	return (x >= 1250 && x <= 1470) && //Left = 1250, Right = 1250 + 220 = 1470
-		(y >= 550 && y <= 730); // Top = 550, Bottom = 550 + 180  = 730
+	return (x >= 1250 && x <= 1470) &&
+		(y >= 550 && y <= 730);
 }
 
 bool Game::isPointInsideEggSellButton(int x, int y) const
@@ -1213,7 +1090,7 @@ bool Game::isPointInsideMilkSellButton(int x, int y) const
 		y >= milkSellButtonTop && y <= milkSellButtonBottom;
 }
 
-void Game::showWarehouseWindow() //starts the function that opens a new warehouse window
+void Game::showWarehouseWindow()
 {
 	window* warehouseWindow = new window(520, 240, config.wx + 120, config.wy + 120);
 	warehouseWindow->SetWaitClose(false);
@@ -1230,15 +1107,12 @@ void Game::showWarehouseWindow() //starts the function that opens a new warehous
 		if (selectedMilk > warehouseMilkCount)
 			selectedMilk = warehouseMilkCount;
 
-		//draw bkgrnd
 		warehouseWindow->SetPen(WHITE, 1);
 		warehouseWindow->SetBrush(WHITE);
 		warehouseWindow->DrawRectangle(0, 0, 520, 240);
-		//warehouse header
 		warehouseWindow->SetPen(BLACK);
 		warehouseWindow->SetFont(22, BOLD, BY_NAME, "Arial");
 		warehouseWindow->DrawString(20, 20, "Warehouse Summary");
-		//warehouse txt
 		warehouseWindow->SetFont(18, BOLD, BY_NAME, "Arial");
 		warehouseWindow->DrawString(20, 70, "Eggs: " + to_string(warehouseEggCount) + " ($" + to_string(warehouseEggCount * eggPrice) + ")");
 		warehouseWindow->DrawString(20, 110, "Milk: " + to_string(warehouseMilkCount) + " ($" + to_string(warehouseMilkCount * milkPrice) + ")");
@@ -1261,7 +1135,6 @@ void Game::showWarehouseWindow() //starts the function that opens a new warehous
 		warehouseWindow->DrawRectangle(plusL, milkTop, plusR, milkBottom, FILLED, 8, 8);
 		warehouseWindow->DrawRectangle(btnL, milkTop, btnR, milkBottom, FILLED, 8, 8);
 
-		//quantity controls and sell button
 		warehouseWindow->SetFont(16, BOLD, BY_NAME, "Arial");
 		warehouseWindow->DrawString(minusL + 10, eggTop + 5, "-");
 		warehouseWindow->DrawString(cashL, eggTop + 5, "$" + to_string(selectedEggs * eggPrice));
@@ -1275,7 +1148,6 @@ void Game::showWarehouseWindow() //starts the function that opens a new warehous
 		warehouseWindow->DrawString(plusL + 9, milkTop + 5, "+");
 		warehouseWindow->DrawString(btnL + 15, milkTop + 5, "SELL");
 		warehouseWindow->UpdateBuffer();
-		//get click area
 		int popupX = 0, popupY = 0;
 		clicktype popupClick = warehouseWindow->GetMouseClick(popupX, popupY);
 
@@ -1306,27 +1178,26 @@ void Game::showWarehouseWindow() //starts the function that opens a new warehous
 	delete warehouseWindow;
 }
 
-void Game::advanceLevel() // starts the level up function
+void Game::advanceLevel()
 {
 	level++;
-	gametimer(level); //recalculates the timer for the new level
-	goalProgress = 0; //resets the current level goal progress
-	goalTarget += 450; //increases the next goal target after leveling up
+	gametimer(level);
+	goalProgress = 0;
+	goalTarget += 450;
 
-	mainWolfVisible = false; //makes the main wolf visible again for the new level
+	mainWolfVisible = false;
 	wolvesSpawned = false;
 	wolfSpawnCountdown = 10;
-	consecutiveWolfClicks = 0;//resets the wolf click combo counter
+	consecutiveWolfClicks = 0;
 	wolves.clear();
 	wolvesVel.clear();
-
-	//spawnWolves();
+	wolfHitCounts.clear();
+	deadWolves.clear();
 	redrawField();
-	printMessage("Level increased to " + to_string(level) + "."); // shows a status-bar message telling the player they leveled up
+	printMessage("Level increased to " + to_string(level) + ".");
 }
 
-void Game::checkLevelGoal() //goal check function
-
+void Game::checkLevelGoal()
 {
 	while (goalProgress >= goalTarget)
 		advanceLevel();
@@ -1377,15 +1248,15 @@ void Game::handlePlayAreaClick(int x, int y)
 		return;
 	}
 
-	if (isPointInsideWarehouse(x, y)) //checks whether the warehouse itself was clicked
+	if (isPointInsideWarehouse(x, y))
 	{
-		consecutiveWolfClicks = 0;//resets the wolf combo because the click was not on the wolf
+		consecutiveWolfClicks = 0;
 		resetWolfHitCounters(-2);
-		showWarehouseWindow();//opens the popup warehouse window
+		showWarehouseWindow();
 		return;
 	}
 
-	if (isPointInsidePrimaryWolf(x, y)) //checks whether the main wolf was clicked
+	if (isPointInsidePrimaryWolf(x, y))
 	{
 		resetWolfHitCounters(-1);
 		consecutiveWolfClicks++;
@@ -1435,36 +1306,29 @@ void Game::handlePlayAreaClick(int x, int y)
 
 void Game::go()
 {
-	//This function reads the position where the user clicks to determine the desired operation
 	int x = -1, y = -1;
 	bool isExit = false;
 
-	//Change the title
 	pWind->SetBuffering(true);
 	pWind->UpdateBuffer();
 	pWind->ChangeTitle("Farm Frenzy");
 
-	//Set up the clock tracker before the loop starts
 	auto lastTime = std::chrono::steady_clock::now();
-	auto lastProductionTick = lastTime;
 
 	do
 	{
 		updateStatusMessageTimer();
 		auto currentTime = std::chrono::steady_clock::now();
 
-		// Check if 1 second has passed
 		if (!paused && std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count() >= 1)
 		{
-			if (time > 0) {
-				time--; // Decrease timer
-			}
+			if (time > 0)
+				time--;
 
 			if (!wolvesSpawned) {
 				if (wolfSpawnCountdown > 0) {
 					wolfSpawnCountdown--;
-				} // Holds the first 10 seconds of gameplay
-
+				}
 				else {
 					wolvesSpawned = true;
 					bool safe = false;
@@ -1472,37 +1336,28 @@ void Game::go()
 					{
 						wolfX = 50 + (rand() % (config.windWidth - 80 - 100));
 						wolfY = (2 * config.toolBarHeight + 20) + (rand() % (config.windHeight - config.statusBarHeight - 80 - 40));
-						// Main wolf uses a size of 80x80
 						safe = !isAreaOccupiedByAnimal(wolfX, wolfY, 80, 80);
 					}
 					mainWolfVisible = true;
 					spawnWolves();
-					if (level == 1) printMessage("Watch out! The wolves have arrived!");
+					if (level == 1)
+						printMessage("Watch out! The wolves have arrived!");
 				}
 			}
 
-			if (time <= 0) {
-				paused = true; // Stop the game when time runs out
-			}
+			if (time <= 0)
+				paused = true;
 
-			lastTime = currentTime; // Reset the clock tracker
+			lastTime = currentTime;
 			tickWolfRespawns();
 		}
 		else if (paused)
 		{
 			lastTime = currentTime;
 		}
-		else
-		{
-			lastProductionTick = currentTime;
-		}
 
-		pWind->SetBuffering(true); // Prevent flickering
-
-		string budget_string_code = "BUDGET = $" + to_string(budget);
-		string budget_string = "BUDGET: $" + to_string(budget);
-		string prices = " | Chick: $100 | Cow: $200 | Food Area: $50 ";
-		printBudget(budget_string + prices); //printBudget bar
+		pWind->SetBuffering(true);
+		printBudget(buildBudgetText(budget));
 
 		gameToolbar->draw();
 		drawCollectAllButton();
@@ -1510,12 +1365,12 @@ void Game::go()
 		drawfieldboundary();
 		updatestatusbar();
 
-		clicktype click = getMouseClick(x, y);	//Get the coordinates of the user click
+		clicktype click = getMouseClick(x, y);
 
 		if (!paused)
 			updatePlayArea();
 		else if (paused && time > 0)
-			printMessage("Game paused"); // Only say paused if there is still time left
+			printMessage("Game paused");
 		else if (time <= 0)
 		{
 			pWind->SetPen(RED, 5);
@@ -1524,14 +1379,12 @@ void Game::go()
 			string msg = "GAME OVER";
 			int textWidth, textHeight;
 
-			// Calculate center of the screen instead of hardcoding the text position
 			pWind->GetStringSize(textWidth, textHeight, msg);
 			int x = (config.windWidth - textWidth) / 2;
 			int y = (config.windHeight - textHeight) / 2;
 
 			pWind->DrawString(x, y, msg);
 
-			// Shows the final budget below the Game Over message
 			pWind->SetFont(30, BOLD, BY_NAME, "Arial");
 			string subMsg = "Final Budget: $" + to_string(budget);
 			pWind->GetStringSize(textWidth, textHeight, subMsg);
@@ -1540,13 +1393,10 @@ void Game::go()
 		else
 			redrawField();
 
-		pWind->UpdateBuffer(); // Update the buffer after all drawing is finished
+		pWind->UpdateBuffer();
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-		//if (gameMode == MODE_DSIGN)		//Game is in the Design mode
-		//{
-			//[1] If user clicks on the Toolbar
 		if (click == LEFT_CLICK && y >= 0 && y < config.toolBarHeight)
 		{
 			if (isPointInsideCollectAllButton(x, y))
@@ -1562,15 +1412,11 @@ void Game::go()
 		{
 			handlePlayAreaClick(x, y);
 		}
-		//}
-
 	} while (!isExit);
 }
 
-// Constantly erases the old frame and draws the new one.
 void Game::updatePlayArea()
 {
-	// 1. Check collisions with the vector of animals
 	for (auto it = animals.begin(); it != animals.end(); )
 	{
 		Animal* animal = *it;
@@ -1580,7 +1426,6 @@ void Game::updatePlayArea()
 
 		bool isEaten = false;
 
-		// makes collision with the main wolf happen only while that wolf is visible
 		if (mainWolfVisible &&
 			p.x < wolfX + 80 && p.x + w > wolfX &&
 			p.y < wolfY + 80 && p.y + h > wolfY)
@@ -1588,36 +1433,31 @@ void Game::updatePlayArea()
 			isEaten = true;
 		}
 
-		// B. Check collision with any multiplied/cloned wolves
 		if (!isEaten) {
 			for (size_t i = 0; i < wolves.size(); i++) {
 				if (p.x < wolves[i].x + 80 && p.x + w > wolves[i].x &&
 					p.y < wolves[i].y + 80 && p.y + h > wolves[i].y)
 				{
 					isEaten = true;
-					break; // Stop checking other wolves if already eaten
+					break;
 				}
 			}
 		}
 
-		// C. If the animal was eaten, remove it from the game
 		if (isEaten)
 		{
-			delete animal;              // Free the memory
-			it = animals.erase(it);     // Remove safely from the vector
+			delete animal;
+			it = animals.erase(it);
 
-			if (animalcount > 0) {
-				animalcount--;          // Decrease the counter
-				updatestatusbar();      // Refresh the UI to show the new count
-			}
+			if (animalcount > 0)
+				animalcount--;
 		}
 		else
 		{
-			++it; // Move to the next animal only if this one wasn't eaten
+			++it;
 		}
 	}
 
-	// 2. Move wolves and animals
 	moveWolf();
 	for (Animal* animal : animals)
 		animal->moveStep();
@@ -1625,68 +1465,24 @@ void Game::updatePlayArea()
 	static auto lastTime = std::chrono::steady_clock::now();
 	auto currentTime = std::chrono::steady_clock::now();
 
-	int realSecondsPassed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count();
+	int realSecondsPassed = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count());
 
-	// 1. Check if the game is paused (from clicking Pause or opening Warehouse)
-	if (paused || realSecondsPassed > 1) // large gap means we just resumed from a pause
+	if (paused || realSecondsPassed > 1)
 	{
-		lastTime = currentTime; // discard accumulated pause time
-		realSecondsPassed = 0;  // don't advance the production counter
+		lastTime = currentTime;
 	}
-	else if (realSecondsPassed >= 1)
+	else if (realSecondsPassed > 0)
 	{
 		updateAnimalProduction(realSecondsPassed);
 		lastTime = currentTime;
 	}
 
-	// 2. If NOT paused, check if a second has passed
-	else if (realSecondsPassed >= 1)
-	{
-		updateAnimalProduction(realSecondsPassed); // Tell animals to produce
-		lastTime = currentTime; // Reset the timer for the next second
-	}
-
-	// 3. Clear the playing area and draw static background elements
 	clearPlayingArea();
 	drawFieldBackground();
 	drawfieldboundary();
 	drawGrass();
-
-	// 4. Draw the grass (and any old array animals) so it sits on the ground
-	gameBudgetbar->moveAllAnimals();
-
-	// 5. Draw the moving wolf and new vector animals ON TOP of the grass
 	drawWolf();
-
-	int chickCounter = 1;
-	int cowCounter = 1;
-
-	for (Animal* animal : animals)
-	{
-		animal->draw();
-
-		pWind->SetPen(BLACK, 2);
-		pWind->SetFont(16, BOLD, BY_NAME, "Arial");
-		point p = animal->getRefPoint();
-
-		int xShift = 15;
-		int displayCounter = 1;
-
-		// If width >= 70, it's a Cow. Otherwise, it's a Chick.
-		if (animal->getWidth() >= 70)
-		{
-			xShift = 30;
-			displayCounter = cowCounter++; // Use and increment cow counter
-		}
-		else
-		{
-			xShift = 15;
-			displayCounter = chickCounter++; // Use and increment chick counter
-		}
-
-		pWind->DrawString(p.x + animal->getWidth() - xShift, p.y - 25, to_string(displayCounter));
-	}
-
+	drawAnimalNumbers(pWind, animals);
 	drawFieldProducts();
 	drawWarehouse();
 }
