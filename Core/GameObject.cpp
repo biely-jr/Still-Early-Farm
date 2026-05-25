@@ -10,11 +10,10 @@ void GameObject::setRefPoint(point p)
 {
 	RefPoint = p;
 }
-
-
-// you should implement this function knowing that each game object has refPoint, width and height 
-// for simplicity, you can consider all game objects are rectangles
 bool GameObject::CollisionDetection(const GameObject& gObj)
 {
-	return false;
+	return RefPoint.x < gObj.RefPoint.x + gObj.width &&
+		RefPoint.x + width > gObj.RefPoint.x &&
+		RefPoint.y < gObj.RefPoint.y + gObj.height &&
+		RefPoint.y + height > gObj.RefPoint.y;
 }
