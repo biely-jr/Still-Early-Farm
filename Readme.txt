@@ -1,71 +1,52 @@
+# Still Early Farm
 
-Documentation for the CMUgraphics package is found in Manual.txt.
+A C++ 2D farm simulation game built with the CMU Graphics Library (CMUgraphicsLib). This project lets players manage a virtual farm, interact with game objects, and handle a simple budget.
 
-Release notes for Version 1.2 of the package
---------------------------------------------
-Due to some name conflicts, graphics.h has been renamed to CMUgraphics.h
-(and graphics.cpp, CMUgraphics.cpp)
+---
 
-Some constants have been renamed (from version 1.1):
+## Purpose of the Project
 
-	L_CLICK -> LEFT_CLICK
-	R_CLICK -> RIGHT_CLICK
-	LEFT    -> LEFT_BUTTON
-	RIGHT   -> RIGHT_BUTTON
+This project was built as an educational assignment to practice software development and Object-Oriented Programming (OOP) concepts. It focuses on several key learning goals:
 
-Also, the default destructor behavior of the window object has 
-changed.  If a window is the last window object on screen, it 
-will now not disappear until the mouse has been clicked in the 
-window.  This behavior can be changed using the SetWaitClose 
-function described in "Manual.txt".
+- Learning OOP Concepts: Putting core programming ideas into practice, such as using inheritance and polymorphism to create different game entities from a base object template.
+- Building a Basic Game Framework: Understanding how a standard 2D game works from the ground up, including managing a game loop, handling player inputs, updating object states, and rendering visuals.
+- Handling Resource Logic: Implementing game rules that keep track of money and transactions whenever a player buys or interacts with items on the farm.
 
-With this release, the source for each compiler is the same; 
-compiler differences are resolved in the file version.h.
-An example of the use of this file is if you're using
-Metrowerks version 3, you need to uncomment the following #define 
-	#define __MW_CODEWARRIOR3__
-and comment out this one
-	#define __MW_CODEWARRIOR4__
+---
 
+## Features
 
-Some other notes on using the package follow:
----------------------------------------
+- Visual 2D Interface: Uses CMUgraphicsLib to create an easy-to-use graphical screen for the game.
+- Dynamic Object Management: Systematically tracks and updates different farm elements on the screen automatically.
+- Farm Interactions: Includes modular systems specifically designed to handle animals and farm mechanics.
+- Live Budget Tracking: Keeps a running tally of in-game funds to enforce budget limits while playing.
+- Clean Configuration: Keeps game settings, prices, and rules organized in one central GameConfig.h file.
 
-Demo.cpp is included in the source code for the project and exercises
-virtually all of the member functions in the CMUgraphics package.  Also
-included in the graphics folder is House.cpp which is more emblematic of a
-first assignment's solution.  In Metrowerks CodeWarrior, to compile
-House.cpp instead of Demo.cpp, drag it into the project window and remove
-Demo.cpp from the project.  In Microsoft Visual C++, remove Demo.cpp from
-the project and then go to the Project menu and select the "Add to Project"
-submenu and finally select files.  Then use the standard file dialog to
-locate and add House.cpp.  In Borland, drag House.cpp into the project
-window and remove Demo.cpp from the project.
+---
 
-------------------------------------------------------------------------------
+## Project Structure
 
-The demo makes use of an ostringstream which is fairly new to the C++
-Standard and supersedes the older ostrstream.  If your compiler does not
-support ostringstreams, e.g., it complains about the #include <sstream>
-statement or the declaration of the ostringstream, you should do the following:
+- Core/ — Contains the main game logic, loop, and base object templates.
+- CMUgraphicsLib/ — The graphics library used to draw shapes, images, and text on the screen.
+- Config/ — Holds the configuration files for game settings and values.
+- Debug/ — Stores temporary build files created during compilation.
 
-replace
-        #include <sstream>
-with
-        #include <strstream.h>
+---
 
-and replace every declaration of output (there are five)
-        ostringstream output;
-with
-        ostrstream output;
+## Getting Started
 
-------------------------------------------------------------------------------
+### Prerequisites
+- Windows OS (Required by the graphics library)
+- Visual Studio (Community or Professional edition)
 
-Notes for Borland users:  the library and include paths are currently set to
-c:\bc5\lib and c:\bc5\include.  If your standard libraries are located in a 
-different directory, you will have to right-click the top-level project node,
-select Edit Local Options and change the paths appropriately.
+### How to Run
+1. Download the repository as a ZIP file.
+2. Unzip the folder on your computer.
+3. Open the main solution file named graphics_prj.sln using Visual Studio.
+4. Press F5 (or click the Start button) to compile and launch the game.
 
-Once you compile the project, you'll notice many warnings are generated.  All
-can be safely ignored; if you figure out how to suppress them, send mail to
-mjs@cs.cmu.edu.
+---
+
+## License
+
+This project is intended for educational purposes. Please check the CMUgraphicsLib documentation regarding permissions for using the graphics library.
