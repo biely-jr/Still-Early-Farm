@@ -1,11 +1,8 @@
 #include "Budgetbar.h"
 #include "../Config/GameConfig.h"
 #include "../Core/Game.h"
-#include <iostream>
 using namespace std;
 
-// Budgetbar inherits from Drawable (is a relationship)
-// Reuse behavior / properties + improve / brush off / specialize
 BudgetbarIcon::BudgetbarIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : Drawable(r_pGame, r_point, r_width, r_height)
 {
 	image_path = img_path;
@@ -13,46 +10,26 @@ BudgetbarIcon::BudgetbarIcon(Game* r_pGame, point r_point, int r_width, int r_he
 
 void BudgetbarIcon::draw() const
 {
-	//draw image of this object
 	window* pWind = pGame->getWind();
 	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
 }
 
-// Creation of a constructor which is called upon when object is created
-ChickIcon::ChickIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : BudgetbarIcon(r_pGame, r_point, r_width, r_height, img_path) // The second half builds the budget bar which contains the chich inon within
+ChickIcon::ChickIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path) : BudgetbarIcon(r_pGame, r_point, r_width, r_height, img_path)
 {
-	// Creation of an array
-	chickList = new Chick * [15];
-	// (new) Creates a Chick somewhere in memory and its address is stored in chickList
-	// We use dynamic memory because we do not know how many objects will be created, so when clicking the chick icon, the chick is created at runtime instead of manually setting the number of chicks
-	for (int i = 0; i < 10; i++) {
-		chickList[i] = nullptr;
-	}
 }
 
 void ChickIcon::onClick()
 {
-	// Delegate animal placement to Game manager
 	pGame->placeAnimal(ANIMAL_CHICK);
 }
 
 CowIcon::CowIcon(Game* r_pGame, point r_point, int r_width, int r_height, string img_path)
 	: BudgetbarIcon(r_pGame, r_point, r_width, r_height, img_path)
 {
-	count = 0;
-
-	cowList = new Cow * [15];
-	for (int i = 0; i < 15; i++)
-	{
-		cowList[i] = nullptr;
-	}
 }
 
 void CowIcon::onClick()
 {
-	cout << "Icon Cow Clicked" << endl;
-
-	// Delegate animal placement to Game manager
 	pGame->placeAnimal(ANIMAL_COW);
 }
 
@@ -61,18 +38,15 @@ FoodAreaIcon::FoodAreaIcon(Game* r_pGame, point r_point, int r_width, int r_heig
 {
 }
 
-// The randomized coordinates (X,Y) are calculated and stored through this function implementation
 void FoodAreaIcon::onClick()
 {
 	if (pGame->spendBudget(50))
 	{
-		// 1. Generate random X and Y within the playable field boundaries
 		int randomX = range_min_x + rand() % (range_max_x - range_min_x + 1);
 		int randomY = range_min_y + rand() % (range_max_y - range_min_y + 1);
 
 		point newGrassPos = { randomX, randomY };
 
-		// 2. Send the coordinate to the Game to be stored and drawn
 		pGame->addGrassPatch(newGrassPos);
 	}
 	else
@@ -83,7 +57,6 @@ void FoodAreaIcon::onClick()
 
 Budgetbar::Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height) : Drawable(r_pGame, r_point, r_width, r_height)
 {
-	//To control the order of these images in the menu, they must be ordered as follows	to ensure the animals pass OVER the grass patch
 	iconsImages[ICON_FOOD_AREA] = "images\\FoodArea.jpg";
 	iconsImages[ICON_CHICK] = "images\\chick.jpg";
 	iconsImages[ICON_COW] = "images\\cow.jpg";
@@ -97,16 +70,11 @@ Budgetbar::Budgetbar(Game* r_pGame, point r_point, int r_width, int r_height) : 
 	iconsList[ICON_FOOD_AREA] = new FoodAreaIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_FOOD_AREA]);
 	p.x += config.iconWidth;
 
-	//For each icon in the tool bar create an object 
 	iconsList[ICON_CHICK] = new ChickIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_CHICK]);
 	p.x += config.iconWidth;
-	// The constructor is automatically called to impelement its setup function
 
 	iconsList[ICON_COW] = new CowIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_COW]);
 	p.x += config.iconWidth;
-	//p.x += config.iconWidth;
-	//iconsList[ICON_CHICK] = new ChickIcon(pGame, p, config.iconWidth, config.toolBarHeight, iconsImages[ICON_CHICK]);
-
 }
 
 Budgetbar::~Budgetbar()
@@ -119,110 +87,25 @@ Budgetbar::~Budgetbar()
 void Budgetbar::draw() const
 {
 	for (int i = 0; i < ANIMAL_COUNT; i++)
-		// Encapsulation (Hides complexity) ==> The drawable function is just being called
 		iconsList[i]->draw();
 	window* pWind = pGame->getWind();
 	pWind->SetPen(BLACK, 3);
 	pWind->DrawLine(0, 2 * config.toolBarHeight, pWind->GetWidth(), 2 * config.toolBarHeight);
 }
 
-// Detect where the user clicked
 bool Budgetbar::handleClick(int x, int y)
 {
-	if (x > ANIMAL_COUNT * config.iconWidth) //click outside toolbar boundaries
+	if (x > ANIMAL_COUNT * config.iconWidth)
 		return false;
 
-
-	//Check which icon was clicked
-	//Divide x co-ord of the point clicked by the icon width
-	//if division result is 0, first icon is clicked, if 1, 2nd icon and so on
-
 	int clickedIconIndex = (x / config.iconWidth);
-	iconsList[clickedIconIndex]->onClick();	//execute onClick action of clicked icon
+	iconsList[clickedIconIndex]->onClick();
 
 	return false;
-
-}
-
-void ChickIcon::moveAnimals()
-{
-	// Loop through all spawned chicks, move them, and redraw them
-	for (int i = 0; i < count; i++) {
-		if (chickList[i] != nullptr) {
-			chickList[i]->moveStep();
-			chickList[i]->draw();
-		}
-	}
-}
-
-void CowIcon::moveAnimals()
-{
-	// Loop through all spawned cows, move them, and redraw them
-	for (int i = 0; i < count; i++) {
-		if (cowList[i] != nullptr) {
-			cowList[i]->moveStep();
-			cowList[i]->draw();
-		}
-	}
 }
 
 void FoodAreaIcon::draw() const
 {
 	window* pWind = pGame->getWind();
 	pWind->DrawImage(image_path, RefPoint.x, RefPoint.y, width, height);
-}
-
-void Budgetbar::moveAllAnimals()
-{
-	// Tell every animal icon to move its respective animals where it iterates through iconsList
-	// Which has pointers to all animals
-	for (int i = 0; i < ANIMAL_COUNT; i++) {
-		if (iconsList[i] != nullptr) { //Ensures the icon actually exists
-			iconsList[i]->moveAnimals();
-		}
-	}
-}
-
-void ChickIcon::catchAnimals(int wolfX, int wolfY, int wolfW, int wolfH)
-{
-	for (int i = 0; i < count; i++) {
-		if (chickList[i] != nullptr) {
-			point p = chickList[i]->getRefPoint();
-			int w = chickList[i]->getWidth();
-			int h = chickList[i]->getHeight();
-
-			// Bounding Box Collision Detection
-			if (p.x < wolfX + wolfW && p.x + w > wolfX &&
-				p.y < wolfY + wolfH && p.y + h > wolfY)
-			{
-				// Collision happened! The wolf eats the chick
-				delete chickList[i];      // Free the memory
-				chickList[i] = nullptr;   // Prevent using dead pointers (making them disappear)
-
-				if (pGame->animalcount > 0) pGame->animalcount--; // Optional: Update status bar
-			}
-		}
-	}
-}
-
-void CowIcon::catchAnimals(int wolfX, int wolfY, int wolfW, int wolfH)
-{
-	for (int i = 0; i < count; i++) {
-		if (cowList[i] != nullptr) {
-			point p = cowList[i]->getRefPoint();
-			int w = cowList[i]->getWidth();
-			int h = cowList[i]->getHeight();
-
-			// Bounding Box Collision Detection
-			if (p.x < wolfX + wolfW && p.x + w > wolfX &&
-				p.y < wolfY + wolfH && p.y + h > wolfY)
-			{
-				// Collision happened! The wolf eats the cow
-				delete cowList[i];
-				cowList[i] = nullptr;
-
-				if (pGame->animalcount > 0) pGame->animalcount--; // Optional: Update status bar
-			}
-		}
-	}
 }
